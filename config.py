@@ -46,6 +46,7 @@ def _get_stim_conf():
 	patch_dt = np.dtype( [ ( "id", "int" ),
 	                       ( "ecc", "float" ),
 	                       ( "theta", "float" ),
+	                       ( "diam", "float" ),
 	                       ( "cx", "float" ),
 	                       ( "cy", "float" ),
 	                       ( "vf", "|S1" ),
@@ -61,11 +62,11 @@ def _get_stim_conf():
 	                [ 45, 135, 225, 315 ]
 	              ]
 
-	# ~ 1.8, 3.5, 6.1 deg
-	ring_ecc = [ 62, 123, 212, 262 ]
+	# ~ 1.8, 3.5, 6.1, 8.5 deg
+	ring_ecc = [ 62, 123, 212, 297 ]
 
-	# M0 = 29.2/3.67; M = 29.2/(e+3.67); D = M0/M*30*2
-	ring_diam = [ 89, 117, 158, 183 ]
+	# M0 = 29.2/3.67; M = 29.2/(e+3.67); D = M0/M*15*2
+	ring_diam = [ 45, 59, 80, 99 ]
 
 	i_patch = 0
 
@@ -84,6 +85,7 @@ def _get_stim_conf():
 			patch[ "id" ] = i_patch
 			patch[ "ecc" ] = ecc
 			patch[ "theta" ] = theta
+			patch[ "diam" ] = diam
 			patch[ "cx" ] = cx
 			patch[ "cy" ] = cy
 			patch[ "ring" ] = i_ring
