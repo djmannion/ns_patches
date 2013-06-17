@@ -34,6 +34,12 @@ def _get_loc_conf():
 
 	loc_conf.id = "ns_patches_loc"
 
+	loc_conf.dur_s = 1.0
+
+	loc_conf.full_run_len_s = 1.0
+
+	
+
 	return loc_conf
 
 
