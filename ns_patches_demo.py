@@ -32,9 +32,11 @@ def main():
 	                [ 0, 30, 60, 120, 150, 180, 210, 240, 300, 330 ],
 	              ]
 
-	ring_ecc = [ 62, 123, 212 ]
+	# ~ 1.8, 3.5, 6.1 deg
+	ring_ecc = [ 62, 123, 212, 262 ]
 
-	ring_diam = [ 89, 117, 158 ]
+	# M0 = 29.2/3.67; M = 29.2/(e+3.67); D = M0/M*30*2
+	ring_diam = [ 89, 117, 158, 183 ]
 
 	mask_info = []
 
@@ -115,12 +117,12 @@ def set_stims( win, n_coh, img_list, stims ):
 
 	other_img = [ random.choice( img_list ) for _ in stims ]
 
-	img = [ coh_img ] * n_coh + other_img[ :( len( stims ) - n_coh ) ]
+	img = [ coh_img ] * n_coh + [ other_img[ 0 ] ] * ( len( stims ) - n_coh )
 	random.shuffle( img )
 
 	for ( i_stim, stim ) in enumerate( stims ):
 
-		print img[ i_stim ]
+#		print img[ i_stim ]
 
 		img_dir, img_name = os.path.split( img[ i_stim ] )
 
