@@ -1,3 +1,6 @@
+import os.path
+import csv
+
 import numpy as np
 
 import psychopy.visual, psychopy.misc, psychopy.event, psychopy.core
@@ -59,3 +62,29 @@ def get_stim( win, conf ):
 	      ]
 
 	return stim
+
+
+def load_timing( conf, exp_paths, run_num ):
+
+	timing = []
+
+	for i_patch in xrange( conf.stim.n_patches ):
+
+		with open( os.path.join( exp_paths.timing_dir,
+		                         ( "ns_patches-loc_timing_patch_" +
+		                           "{n:02d}.txt".format( n = i_patch )
+		                         )
+		                       ), "r"
+		         ) as timing_file:
+
+			timing_csv = csv.reader( timing_file, delimiter = " " )
+
+			p_timing = [ run_timing for run_timing in timing_csv ]
+
+			timing.append( map( int, p_timing[ run_num - 1 ] ) )
+
+	return timing
+
+
+
+
