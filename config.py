@@ -1,7 +1,12 @@
 
+import os.path
+import csv
+
 import numpy as np
 
 import psychopy.misc
+
+import ns_patches.paths
 
 
 class ConfigContainer( object ):
@@ -13,8 +18,9 @@ def get_conf( subj_id = None ):
 	conf = ConfigContainer()
 
 	conf.exp = _get_exp_conf()
-	conf.loc = _get_loc_conf()
 	conf.stim = _get_stim_conf()
+	conf.acq = _get_acq_conf()
+	conf.loc = _get_loc_conf( conf )
 
 	return conf
 
@@ -28,7 +34,44 @@ def _get_exp_conf():
 	return exp_conf
 
 
-def _get_loc_conf():
+def _get_acq_conf():
+	"""Get the acquisition configuration"""
+
+	acq_conf = ConfigContainer()
+
+	acq_conf.monitor_name = "UMN_7T"
+
+	acq_conf.tr_s = 2.0
+
+	# how to reshape the data to be in +RAS convention
+	# subsequent commands are relative to the data AFTER this operation
+	# see docs for how to determine these
+	acq_conf.ras = ( "-x", "-z", "-y" )
+
+	# phase encode direction, according to the data's internal axes
+	acq_conf.ph_encode_dir = "z"
+
+	# axis index that corresponds to the inplanes
+	# this is zero-based; 0 = LR, 1 = PA, 2 = IS (assuming reshape_to_RAS has been
+	# set correctly)
+	acq_conf.slice_axis = 1
+
+	# direction in which slices were acquired along the axis
+	acq_conf.slice_acq_dir = "+1"
+
+	# number of slices acquired
+	acq_conf.n_slices = 36
+
+	# TE difference in the fieldmaps
+	acq_conf.delta_te_ms = 1.02
+
+	# corresponds to the echo spacing
+	acq_conf.dwell_ms = 0.65 / 2.0
+
+	return acq_conf
+
+
+def _get_loc_conf( conf ):
 
 	loc_conf = ConfigContainer()
 
@@ -36,9 +79,15 @@ def _get_loc_conf():
 
 	loc_conf.dur_s = 1.0
 
-	loc_conf.full_run_len_s = 1.0
+	loc_conf.n_vol = 166
+	loc_conf.n_cull_vol = 16
+	loc_conf.n_valid_vol = loc_conf.n_vol - loc_conf.n_cull_vol
 
-	
+	loc_conf.run_len_s = loc_conf.n_vol * conf.acq.tr_s
+
+	loc_conf.bin_dur_s = 4.0
+
+	loc_conf.n_max_runs = 6
 
 	return loc_conf
 
@@ -107,5 +156,71 @@ def _get_stim_conf():
 	return stim_conf
 
 
+def make_timing( conf ):
+
+	exp_paths = ns_patches.paths.get_exp_paths( conf )
+
+	n_evt = ( conf.loc.n_valid_vol *
+	          conf.acq.tr_s /
+	          conf.loc.bin_dur_s
+	        )
+
+	assert n_evt.is_integer()
+
+	n_evt = int( n_evt )
+
+	n_null_evt = n_evt / 4
+
+	n_pre_evt = ( conf.loc.n_cull_vol *
+	              conf.acq.tr_s /
+	              conf.loc.bin_dur_s
+	            )
+
+	assert n_pre_evt.is_integer()
+
+	n_pre_evt = int( n_pre_evt )
+
+	# each patch gets its own timing
+	for i_patch in xrange( conf.stim.n_patches ):
+
+		timing_path = os.path.join( exp_paths.timing_dir,
+		                            ( "ns_patches-loc_timing_patch_" +
+		                              "{n:02d}.txt".format( n = i_patch )
+		                            )
+		                          )
+
+		timing_file = open( timing_path, "w" )
+
+		timing_csv = csv.writer( timing_file, delimiter = " " )
+
+		for run_num in xrange( 1, conf.loc.n_max_runs + 1 ):
+
+			t = np.ones( ( n_evt ) )
+
+			t[ :n_null_evt ] = 0
+
+			np.random.shuffle( t )
+
+			assert t.sum() == ( n_evt - n_null_evt )
+
+			t = np.concatenate( ( t[ -n_pre_evt: ], t ) )
+
+			assert len( t ) == ( n_pre_evt + n_evt )
+			assert ( len( t ) * conf.loc.bin_dur_s == conf.loc.run_len_s )
+
+			t_sec = np.where( t > 0 )[ 0 ] * conf.loc.bin_dur_s
+
+#			timing_file.write( "\t".join( [ "{n:.0f}".format( n = n )
+#			                                for n in t_sec
+#			                              ]
+#			                            ) +
+#			                   "\n"
+#			                 )
+
+			timing_csv.writerow( [ "{n:.0f}".format( n = n ) for n in t_sec ] )
+
+		timing_file.close()
+
+	return t
 
 
