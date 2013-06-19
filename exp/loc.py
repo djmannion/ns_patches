@@ -18,8 +18,8 @@ def run( run_num ):
 
 	win = psychopy.visual.Window( ( 1024, 768 ),
 	                              monitor = "UMN_7T",
-	                              fullscr = True,
-	                              allowGUI = False
+	                              fullscr = False, #True,
+	                              allowGUI = True #False
 	                            )
 
 	stim = get_stim( win, conf )
@@ -28,7 +28,7 @@ def run( run_num ):
 
 	fix_stim = get_fixation( win, conf )
 
-	( task, targets ) = init_task( conf )
+	( task, targs ) = init_task( conf )
 
 	fix_text = psychopy.visual.TextStim( win = win,
 	                                     text = "",
@@ -37,21 +37,23 @@ def run( run_num ):
 	                                     bold = False
 	                                   )
 
-	target_pos = ( -62, 62 )
+	targ_pos = ( -62, 62 )
 
-	target_text = [ psychopy.visual.TextStim( win = win,
-	                                          text = "%s" % targets[ i, 0 ],
-	                                          height = 26,
-	                                          units = "pix",
-	                                          pos = ( target_pos[ i ], 0 ),
-	                                          color = np.repeat( targets[ i, 1 ], 3 )
-	                                        )
-	                for i in xrange( 2 )
-	              ]
+	targ_txt = [ psychopy.visual.TextStim( win = win,
+	                                       text = "{s:s}".format( targs[ i, 0 ] ),
+	                                       height = 26,
+	                                       units = "pix",
+	                                       pos = ( targ_pos[ i ], 0 ),
+	                                       color = np.repeat( targs[ i, 1 ], 3 )
+	                                     )
+	             for i in xrange( 2 )
+	           ]
 
+
+	wait_str = "Press a button when ready for the next run"
 
 	wait_text = psychopy.visual.TextStim( win = win,
-	                                      text = "Press a button when ready for the next run",
+	                                      text = wait_str,
 	                                      height = 22,
 	                                      units = "pix",
 	                                      bold = False,
@@ -65,15 +67,15 @@ def run( run_num ):
 	trig_key = "t"
 
 	_ = [ fixation.draw() for fixation in fix_stim ]
+	_ = [ t_text.draw() for t_text in targ_txt ]
 
-	_ = [ t_text.draw() for t_text in target_text ]
 	wait_text.draw()
 	win.flip()
 
 	keys = psychopy.event.waitKeys()
 
 	_ = [ fixation.draw() for fixation in fix_stim ]
-	_ = [ t_text.draw() for t_text in target_text ]
+	_ = [ t_text.draw() for t_text in targ_txt ]
 
 	win.flip()
 
@@ -108,9 +110,9 @@ def run( run_num ):
 		win.flip()
 		run_time = run_clock.getTime()
 
-		keys = psychopy.event.getKeys( timeStamped = run_clock )
+		keys = psychopy.event.getKeys()
 
-		for ( key, timestamp ) in keys:
+		for key in keys:
 
 			if key == quit_key:
 				print "User abort"
@@ -140,12 +142,6 @@ def get_fixation( win, conf ):
 
 	fix_stim.extend( grid )
 
-
-	max_ecc = psychopy.misc.pix2deg( np.max( win.size ),
-	                                 win.monitor
-	                               )
-
-	# make a logarithmically spaced set of rings, in degrees of visual angle
 	grids_r_va = [ 0.5, 1.8, 3.5, 6.1, 8.5 ]
 
 	grid_lum = -0.25
