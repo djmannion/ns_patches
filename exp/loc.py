@@ -18,8 +18,8 @@ def run( run_num ):
 
 	win = psychopy.visual.Window( ( 1024, 768 ),
 	                              monitor = "UMN_7T",
-	                              fullscr = False, #True,
-	                              allowGUI = True #False
+	                              fullscr = True,
+	                              allowGUI = False
 	                            )
 
 	stim = get_stim( win, conf )
@@ -40,7 +40,7 @@ def run( run_num ):
 	targ_pos = ( -62, 62 )
 
 	targ_txt = [ psychopy.visual.TextStim( win = win,
-	                                       text = "{s:s}".format( targs[ i, 0 ] ),
+	                                       text = "{s:d}".format( s = targs[ i, 0 ] ),
 	                                       height = 26,
 	                                       units = "pix",
 	                                       pos = ( targ_pos[ i ], 0 ),
