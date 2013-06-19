@@ -18,11 +18,13 @@ def run( run_num ):
 
 	win = psychopy.visual.Window( ( 1024, 768 ),
 	                              monitor = "UMN_7T",
-	                              fullscr = False,
-	                              allowGUI = True
+	                              fullscr = True,
+	                              allowGUI = False
 	                            )
 
 	stim = get_stim( win, conf )
+
+	ph_offs = np.random.rand( len( stim ) ) * 0.15
 
 	fix_stim = get_fixation( win, conf )
 
@@ -88,7 +90,7 @@ def run( run_num ):
 
 	while run_time < conf.loc.run_len_s:
 
-		stim = set_stim( conf, stim, timing, run_time + ( 1.0 / 60.0 ) )
+		stim = set_stim( conf, stim, timing, run_time + ( 1.0 / 60.0 ), ph_offs )
 
 		# draw
 		_ = [ fixation.draw() for fixation in fix_stim[ :-1 ] ]
@@ -153,7 +155,8 @@ def get_fixation( win, conf ):
 	                                  radius = grid_r_va,
 	                                  units = "deg",
 	                                  edges = 96,
-	                                  lineColor = grid_lum
+	                                  lineColor = grid_lum,
+	                                  lineWidth = 1.5
 	                                )
 	          for grid_r_va in grids_r_va
 	        ]
@@ -166,7 +169,7 @@ def get_fixation( win, conf ):
 	                                     radius = patch[ "diam" ] / 2.0,
 	                                     lineColor = [ -0.25 ] * 3,
 	                                     fillColor = [ 0 ] * 3,
-	                                     edges = 96
+	                                     lineWidth = 1.5,
 	                                   )
 	             for patch in conf.stim.patches
 	           ]
@@ -188,9 +191,9 @@ def get_fixation( win, conf ):
 
 
 
-def set_stim( conf, stim, timing, run_time ):
+def set_stim( conf, stim, timing, run_time, ph_offs ):
 
-	for ( patch, patch_t ) in zip( stim, timing ):
+	for ( patch, patch_t, ph_off ) in zip( stim, timing, ph_offs ):
 
 		t_diff = run_time - np.array( patch_t )
 
@@ -207,7 +210,7 @@ def set_stim( conf, stim, timing, run_time ):
 		else:
 			contrast = 0.0
 
-		if ( np.mod( t_off, conf.loc.reversal_interval_s * 2 ) <
+		if ( np.mod( t_off + ph_off, conf.loc.reversal_interval_s * 2 ) <
 		     conf.loc.reversal_interval_s
 		   ):
 			contrast *= -1.0
