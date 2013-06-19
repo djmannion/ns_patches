@@ -1,0 +1,69 @@
+#! /usr/bin/python2 -O
+# ^ want to run it with optimisations turned on
+
+"""Parses the command-line input and executes multiple runs of the NS patches
+localiser fMRI experiment.
+"""
+
+import sys
+import argparse
+
+import numpy as np
+
+import ns_patches.exp.loc
+
+desc = "Executes the NS patches localiser fMRI experiment"
+
+eg = """
+
+Example usage:
+
+  run subject through all runs:
+    ns_patch_loc
+
+  run subject through runs 3 to the end
+    ns_patch_loc --start=3
+
+  run subject only on run 2
+    ns_patch_loc --start=1 --end=1
+
+"""
+
+#target_dir = "glass_coherence_block/bin"
+
+#current_dir = os.getcwd()
+
+#if current_dir[ -len( target_dir ): ] != target_dir:
+#	raise IOError( "Script needs to be launched from %s" % target_dir )
+
+# use this formatter so we can supply our own indentation
+fmt = argparse.RawDescriptionHelpFormatter
+
+parser = argparse.ArgumentParser( description = desc,
+                                  epilog = eg,
+                                  formatter_class = fmt,
+                                )
+
+parser.add_argument( "--start",
+                     type = int,
+                     help = "Start run",
+                     default = 1
+                   )
+
+parser.add_argument( "--end",
+                     help = "End run",
+                     type = int,
+                     default = 6
+                   )
+
+args = parser.parse_args()
+
+for i_run in np.arange( args.start - 1, args.end ):
+
+	print "Executing: ns_patches.exp.loc.run( {n:d} )".format( n = i_run + 1 )
+
+	exit_status = ns_patches.exp.loc.run( i_run + 1 )
+
+	if exit_status == 1:
+		print "Aborting sequence"
+		sys.exit( exit_status )
