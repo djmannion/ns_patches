@@ -78,6 +78,7 @@ def _get_loc_conf( conf ):
 	loc_conf.id = "ns_patches_loc"
 
 	loc_conf.dur_s = 1.0
+	loc_conf.reversal_interval_s = 0.15
 
 	loc_conf.n_vol = 166
 	loc_conf.n_cull_vol = 16
@@ -210,17 +211,39 @@ def make_timing( conf ):
 
 			t_sec = np.where( t > 0 )[ 0 ] * conf.loc.bin_dur_s
 
-#			timing_file.write( "\t".join( [ "{n:.0f}".format( n = n )
-#			                                for n in t_sec
-#			                              ]
-#			                            ) +
-#			                   "\n"
-#			                 )
+			# randomly add a TR offset. this assumes that the bin duration is double
+			# the TR
+			if np.random.rand() > 0.5:
+				t_sec += conf.acq.tr_s
 
 			timing_csv.writerow( [ "{n:.0f}".format( n = n ) for n in t_sec ] )
 
 		timing_file.close()
 
-	return t
+
+def check_timing( conf, run_timing ):
+
+	cmd = [ "3dDeconvolve",
+	        "-nodata",
+	        "{n:d}".format( conf.loc.n_vol ),
+	        "{n:0f}".format( conf.acq.tr_s ),
+	        "-polort", "A",
+	        "-CENSORTR", "0-{n:d}".format( n = conf.loc.n_cull_vol - 1 ),
+	        "-num_stimts", "{n:d}".format( n = conf.stim.n_patches ),
+	        "-local_times",
+	      ]
+
+	for ( i_patch, patch ) in run_timing:
+
+		cmd.extend( [ "-stim_times",
+		              "{n:d}".format( n = i_patch + 1 ),
+		              "'1D: " + " ".join( map( str, patch ) ) + "'",
+		              "'SPMG1(1)'"
+		            ]
+		          )
+
+	print " ".join( cmd )
+
+
 
 
