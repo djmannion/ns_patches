@@ -26,10 +26,54 @@ def run( run_num ):
 
 	fix_stim = get_fixation( win, conf )
 
+	( task, targets ) = init_task( conf )
+
+	fix_text = psychopy.visual.TextStim( win = win,
+	                                     text = "",
+	                                     height = 26,
+	                                     units = "pix",
+	                                     bold = False
+	                                   )
+
+	target_pos = ( -62, 62 )
+
+	target_text = [ psychopy.visual.TextStim( win = win,
+	                                          text = "%s" % targets[ i, 0 ],
+	                                          height = 26,
+	                                          units = "pix",
+	                                          pos = ( target_pos[ i ], 0 ),
+	                                          color = np.repeat( targets[ i, 1 ], 3 )
+	                                        )
+	                for i in xrange( 2 )
+	              ]
+
+
+	wait_text = psychopy.visual.TextStim( win = win,
+	                                      text = "Press a button when ready for the next run",
+	                                      height = 22,
+	                                      units = "pix",
+	                                      bold = False,
+	                                      pos = ( 0, -100 )
+	                                    )
+
+
 	run_clock = psychopy.core.Clock()
 
 	quit_key = "q"
 	trig_key = "t"
+
+	_ = [ fixation.draw() for fixation in fix_stim ]
+
+	_ = [ t_text.draw() for t_text in target_text ]
+	wait_text.draw()
+	win.flip()
+
+	keys = psychopy.event.waitKeys()
+
+	_ = [ fixation.draw() for fixation in fix_stim ]
+	_ = [ t_text.draw() for t_text in target_text ]
+
+	win.flip()
 
 	keys = psychopy.event.waitKeys( keyList = [ quit_key, trig_key ] )
 
@@ -47,8 +91,17 @@ def run( run_num ):
 		stim = set_stim( conf, stim, timing, run_time + ( 1.0 / 60.0 ) )
 
 		# draw
-		_ = [ fixation.draw() for fixation in fix_stim ]
+		_ = [ fixation.draw() for fixation in fix_stim[ :-1 ] ]
 		_ = [ patch.draw() for patch in stim ]
+
+		i_task_evt = np.where( run_time > task[ :, 0 ] )[ 0 ][ -1 ]
+
+		fix_text.setText( str( int( task[ i_task_evt, 1 ] ) ) )
+		fix_text.setColor( np.repeat( task[ i_task_evt, 2 ], 3 ) )
+
+		fix_text.draw()
+
+		fix_stim[ -1 ].draw()
 
 		win.flip()
 		run_time = run_clock.getTime()
@@ -112,7 +165,8 @@ def get_fixation( win, conf ):
 	                                     units = "pix",
 	                                     radius = patch[ "diam" ] / 2.0,
 	                                     lineColor = [ -0.25 ] * 3,
-	                                     fillColor = [ 0 ] * 3
+	                                     fillColor = [ 0 ] * 3,
+	                                     edges = 96
 	                                   )
 	             for patch in conf.stim.patches
 	           ]
@@ -122,7 +176,7 @@ def get_fixation( win, conf ):
 	fixation = psychopy.visual.Circle( win = win,
 	                                   radius = 4,
 	                                   units = "pix",
-	                                   fillColor = [ -1 ] * 3,
+	                                   fillColor = [ -1, 1, -1 ],
 	                                   lineWidth = 1
 	                                 )
 
@@ -205,5 +259,51 @@ def load_timing( conf, exp_paths, run_num ):
 	return timing
 
 
+def init_task( conf ):
+	"""Initialises the task timing.
 
+	Returns
+	-------
+	task_lut : numpy array, shape of ( evt x info )
+		Task lookup table, where dim two is ( time_s, digit, polarity, target )
+	targets : numpy array, shape of ( target, info )
+		Target information, stored as ( digit, polarity )
+
+	"""
+
+	n_task_per_run = int( conf.loc.run_len_s * 3.0 )
+
+	task_set = np.arange( 10 )
+	np.random.shuffle( task_set )
+
+	targets = np.array( [ [ task_set[ i ], [ -1, +1 ][ i ] ]
+	                      for i in xrange( 2 )
+	                    ]
+	                  )
+
+	# second dim is (time, digit, polarity, target or not)
+	task_lut = np.empty( ( n_task_per_run, 4 ) )
+
+	for i_evt in xrange( n_task_per_run ):
+
+		time_s = i_evt * ( 1.0 / 3.0 )
+
+		curr_task_set = task_set.copy()
+		curr_task_set = curr_task_set[ curr_task_set != task_lut[ i_evt - 1, 1 ] ]
+
+		digit = curr_task_set[ np.random.randint( len( curr_task_set ) ) ]
+
+		polarity = [ -1, +1 ][ np.random.randint( 2 ) ]
+
+		if np.any( np.logical_and( targets[ :, 0 ] == digit,
+		                           targets[ :, 1 ] == polarity
+		                         )
+		         ):
+			target = 1
+		else:
+			target = 0
+
+		task_lut[ i_evt, : ] = [ time_s, digit, polarity, target ]
+
+	return ( task_lut, targets )
 
