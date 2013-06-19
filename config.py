@@ -225,15 +225,15 @@ def check_timing( conf, run_timing ):
 
 	cmd = [ "3dDeconvolve",
 	        "-nodata",
-	        "{n:d}".format( conf.loc.n_vol ),
-	        "{n:0f}".format( conf.acq.tr_s ),
+	        "{n:d}".format( n = conf.loc.n_vol ),
+	        "{n:0f}".format( n = conf.acq.tr_s ),
 	        "-polort", "A",
 	        "-CENSORTR", "0-{n:d}".format( n = conf.loc.n_cull_vol - 1 ),
 	        "-num_stimts", "{n:d}".format( n = conf.stim.n_patches ),
 	        "-local_times",
 	      ]
 
-	for ( i_patch, patch ) in run_timing:
+	for ( i_patch, patch ) in enumerate( run_timing ):
 
 		cmd.extend( [ "-stim_times",
 		              "{n:d}".format( n = i_patch + 1 ),
