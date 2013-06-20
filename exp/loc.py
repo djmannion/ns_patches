@@ -132,12 +132,13 @@ def get_fixation( win, conf ):
 	l_e = [ ( -1, +0 ), ( -h_frac, -1 ), ( +0, -1 ), ( +h_frac, -1 ) ]
 
 	grid = [ psychopy.visual.Line( win,
-	                               start = l_s[ i ],
-	                               end = l_e[ i ],
+	                               start = ls,
+	                               end = le,
 	                               units = "norm",
-	                               lineColor = [ -0.25 ] * 3
+	                               lineColor = [ -0.25 ] * 3,
+	                               lineWidth = 1.5
 	                             )
-	         for i in xrange( len( l_s ) )
+	         for ( ls, le ) in zip( l_s, l_e )
 	       ]
 
 	fix_stim.extend( grid )
