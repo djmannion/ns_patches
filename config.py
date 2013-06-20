@@ -21,6 +21,11 @@ def get_conf( subj_id = None ):
 	conf.stim = _get_stim_conf()
 	conf.acq = _get_acq_conf()
 	conf.loc = _get_loc_conf( conf )
+	conf.ana = _get_ana_conf()
+	conf.all_subj = _get_subj_conf()
+
+	if subj_id is not None:
+		conf.subj = _get_subj_conf( subj_id )
 
 	return conf
 
@@ -32,6 +37,13 @@ def _get_exp_conf():
 	exp_conf.id = "ns_patches"
 
 	return exp_conf
+
+
+def _get_ana_conf():
+
+	ana_conf = ConfigContainer()
+
+	return ana_conf
 
 
 def _get_acq_conf():
@@ -49,7 +61,7 @@ def _get_acq_conf():
 	acq_conf.ras = ( "-x", "-z", "-y" )
 
 	# phase encode direction, according to the data's internal axes
-	acq_conf.ph_encode_dir = "z"
+	acq_conf.ph_enc_dir = "x"
 
 	# axis index that corresponds to the inplanes
 	# this is zero-based; 0 = LR, 1 = PA, 2 = IS (assuming reshape_to_RAS has been
@@ -66,7 +78,7 @@ def _get_acq_conf():
 	acq_conf.delta_te_ms = 1.02
 
 	# corresponds to the echo spacing
-	acq_conf.dwell_ms = 0.65 / 2.0
+	acq_conf.dwell_ms = 0.72 / 2.0
 
 	return acq_conf
 
@@ -155,6 +167,45 @@ def _get_stim_conf():
 
 
 	return stim_conf
+
+
+def _get_subj_conf( subj_id = None ):
+
+	s1000_loc_pilot = ConfigContainer()
+
+	s1000_loc_pilot.subj_id = "s1000_loc_pilot"
+	s1000_loc_pilot.acq_date = "20130620"
+	s1000_loc_pilot.comments = ""
+	s1000_loc_pilot.n_runs = 6
+	s1000_loc_pilot.n_exp_runs = 0
+	s1000_loc_pilot.n_loc_runs = 6
+	s1000_loc_pilot.exp_runs = [ ]
+	s1000_loc_pilot.loc_runs = range( 1, 7 )
+	s1000_loc_pilot.n_fmaps = 1
+	s1000_loc_pilot.mot_base = 4
+
+	s1000_loc_pilot.extra_al_params = [ "-parang", "1", "-13", "-3",
+	                                    "-parang", "2", "16", "26",
+	                                    "-parang", "3", "6", "16",
+	                                    "-maxrot", "10",
+	                                    "-source_automask+2",
+	                                    "-nocmass"
+	                                  ]
+
+
+	s1000_loc_pilot.node_k = { "lh" : 153322,
+	                           "rh" : 156825
+	                         }
+
+	subj = ConfigContainer()
+
+	subj.subj = { "s1000_loc_pilot" : s1000_loc_pilot,
+	            }
+
+	if subj_id is None:
+		return subj
+	else:
+		return subj.subj[ subj_id ]
 
 
 def make_timing( conf ):
