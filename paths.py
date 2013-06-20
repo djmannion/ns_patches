@@ -23,7 +23,7 @@ def get_exp_paths( conf ):
 def get_subj_paths( conf ):
 	"""Get the path structure for a given subject"""
 
-	base_dir = os.path.join( "/labs/olmanlab/Data7T/ns_patches",
+	base_dir = os.path.join( "/labs/olmanlab/Data7T/NatScenePatches/subj_data",
 	                         conf.subj.subj_id
 	                       )
 
@@ -64,7 +64,7 @@ def _get_loc_paths( conf, paths ):
 
 	loc_types = {}
 
-	for loc_type in conf.exp.loc_types:
+	for loc_type in [ "loc" ]:
 
 		curr_loc = fmri_tools.paths.PathsHandler()
 
