@@ -57,37 +57,26 @@ def _get_loc_paths( conf, paths ):
 
 	loc = fmri_tools.paths.PathsHandler()
 
-	loc.base = paths.base / "loc"
+	loc.base = paths.base / "loc_analysis"
 
 	subj_id = conf.subj.subj_id
 	exp_id = conf.exp.id
 
-	loc_types = {}
+	file_base = "{subj_id:s}_{exp_id:s}_loc-".format( subj_id = subj_id,
+	                                                  exp_id = exp_id
+	                                                )
 
-	for loc_type in [ "loc" ]:
+	loc.glm = loc.base + ( file_base + "glm" )
+	loc.beta = loc.base + ( file_base + "beta" )
 
-		curr_loc = fmri_tools.paths.PathsHandler()
+	loc.patch_id = loc.base + ( file_base + "patch_id" )
+	loc.patch_thr = loc.base + ( file_base + "patch_thr" )
+	loc.patch = loc.base + ( file_base + "patch" )
 
-		file_base = "{subj_id:s}_{exp_id:s}_{loc_type:s}_loc-".format( subj_id = subj_id,
-		                                                               exp_id = exp_id,
-		                                                               loc_type = loc_type
-		                                                             )
-
-		curr_loc.base = loc.base / loc_type
-
-		curr_loc.glm = curr_loc.base + ( file_base + "glm" )
-		curr_loc.beta = curr_loc.base + ( file_base + "beta" )
-
-		curr_loc.bltc = curr_loc.base + ( file_base + "bltc" )
-		curr_loc.bl = curr_loc.base + ( file_base + "bl" )
-		curr_loc.psc = curr_loc.base + ( file_base + "psc" )
-
-		curr_loc.mask = curr_loc.base + ( file_base + "mask" )
-		curr_loc.fdr = curr_loc.base + ( file_base + "fdr" )
-
-		loc_types[ loc_type ] = curr_loc
-
-	loc.loc = loc_types
+	loc.timing_base = ( loc.base /
+	                    "timing" +
+	                    "ns_patches-loc_timing_patch"
+	                  )
 
 	return loc
 
