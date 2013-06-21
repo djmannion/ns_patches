@@ -254,7 +254,7 @@ def _get_subj_conf( subj_id = None ):
 	s1000_loc_pilot_4runs.subj_id = "s1000_loc_pilot_4runs"
 	s1000_loc_pilot_4runs.acq_date = "20130620"
 	s1000_loc_pilot_4runs.comments = ""
-	s1000_loc_pilot_4runs.n_runs = 3
+	s1000_loc_pilot_4runs.n_runs = 4
 	s1000_loc_pilot_4runs.n_exp_runs = 0
 	s1000_loc_pilot_4runs.n_loc_runs = 4
 	s1000_loc_pilot_4runs.exp_runs = [ ]
@@ -277,7 +277,7 @@ def _get_subj_conf( subj_id = None ):
 
 	s1000_loc_pilot_5runs = ConfigContainer()
 
-	s1000_loc_pilot_5runs.subj_id = "s1000_loc_pilot_3runs"
+	s1000_loc_pilot_5runs.subj_id = "s1000_loc_pilot_5runs"
 	s1000_loc_pilot_5runs.acq_date = "20130620"
 	s1000_loc_pilot_5runs.comments = ""
 	s1000_loc_pilot_5runs.n_runs = 5

@@ -105,9 +105,6 @@ def main():
 	elif args.preproc_step == "vol_to_surf":
 		ns_patches.analysis.preproc.vol_to_surf( conf, paths )
 
-	elif args.preproc_step == "design_prep":
-		ns_patches.preproc.design_prep( conf, paths )
-
 	else:
 		print "Not implemented"
 
