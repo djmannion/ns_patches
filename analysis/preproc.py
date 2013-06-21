@@ -152,6 +152,10 @@ def fieldmaps( conf, paths ):
 
 			source_img._data = np.mod( source_img._data - diff, 4096 )
 
+			nipy.io.api.save_image( source_img, img_path )
+
+			source_img = nipy.io.api.load_image( img_path )
+
 		# use NN resampling to avoid out-of-range problems with interpolation
 		resampled_img = nipy.algorithms.resample.resample_img2img( source_img,
 		                                                           ref_img,
