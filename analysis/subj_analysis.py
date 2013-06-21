@@ -114,129 +114,158 @@ def loc_glm( conf, paths ):
 
 	start_dir = os.getcwd()
 
-		loc_paths = paths.loc.loc[ loc_type ]
+	os.chdir( paths.loc.base.full() )
 
-		os.chdir( loc_paths.base.full() )
+	# minus one because the range is inclusive
+	censor_vols = conf.loc.n_cull_vol - 1
+	# in AFNI-aware format; (runs):start-end
+	censor_str = "*:0-{v:.0f}".format( v = censor_vols )
 
-		# minus one because the range is inclusive
-		censor_vols = conf.ana.loc_n_censor_vols - 1
-		# in AFNI-aware format; (runs):start-end
-		censor_str = "*:0-{v:.0f}".format( v = censor_vols )
+	# model as a typical SPM event
+	model_str = "'SPMG1({d:.0f})'".format( d = conf.loc.dur_s )
 
-		# some subjects also have censoring at the end of the run
-		if ( ( "stim_loc_end_censor" in conf.subj.__dict__ ) and
-		     ( conf.subj.stim_loc_end_censor ) and
-		     ( loc_type == "stim" )
-		   ):
+	for hemi in [ "lh", "rh" ]:
 
-			# special case for this subject with more volumes than expected
-			censor_str += " *:127..134"
+		glm_cmd = [ "3dDeconvolve",
+		            "-input"
+		          ]
 
-		# need to calculate the rows in the motion correction file that correspond to this localiser runs
-		run_num = conf.subj.loc_runs[ i_loc ]
-		start_vol = np.sum( conf.subj.run_n_vols[ :( run_num - 1 ) ] )
-		end_vol = start_vol + conf.subj.run_n_vols[ run_num - 1 ] - 1
+		glm_cmd.extend( [ paths.func.surfs[ n - 1 ].full( "_{hemi:s}.niml.dset".format( hemi = hemi ) )
+		                  for n in conf.subj.loc_runs
+		                ]
+		              )
 
-		assert( np.arange( start_vol, end_vol + 1 ).shape[ 0 ] == conf.subj.run_n_vols[ run_num - 1 ] )
+		glm_cmd.extend( [ "-force_TR", "{tr:.3f}".format( tr = conf.acq.tr_s ),
+		                  "-polort", "a",  # auto baseline degree
+		                  "-local_times",
+		                  "-CENSORTR", censor_str,
+		                  "-xjpeg", "exp_design.png",
+		                  "-x1D", "exp_design",
+		                  "-overwrite",
+		                  "-x1D_stop",  # want to use REML, so don't bother running
+		                  "-num_stimts", "{n:d}".format( n = conf.stim.n_patches )
+		                ]
+		              )
 
-		# timing of the onset of 'ON' blocks
-		block_starts = np.arange( conf.ana.loc_n_vol_per_block,
-		                          conf.subj.run_n_vols[ run_num - 1 ],
-		                          conf.ana.loc_n_vol_per_block * 2  # doubled because we only model half
-		                        )
-		# convert to seconds
-		block_starts *= conf.acq.tr_s
+		for i_patch in xrange( conf.stim.n_patches ):
 
-		if conf.subj.trig_on_ref:
-			block_starts += conf.acq.tr_s
-
-		# and put into AFNI format
-		time_str = "'1D: " + " ".join( [ "{t:.3f}".format( t = t ) for t in block_starts ] ) + "'"
-
-		# model as a typical SPM block
-		model_str = "SPMG1({d:.0f})".format( d = conf.ana.loc_n_vol_per_block * conf.acq.tr_s )
-
-		for hemi in [ "lh", "rh" ]:
-
-			glm_cmd = [ "3dDeconvolve",
-			            "-input",
-			            paths.func.surfs[ run_num - 1 ].full( "_{hemi:s}.niml.dset".format( hemi = hemi ) )
-			          ]
-
-			glm_cmd.extend( [ "-force_TR", "{tr:.3f}".format( tr = conf.acq.tr_s ),
-			                  "-polort", "a",  # auto baseline degree
-			                  "-local_times",
-			                  "-CENSORTR", censor_str,
-			                  "-xjpeg", "exp_design.png",
-			                  "-x1D", "exp_design",
-			                  "-overwrite",
-			                  "-x1D_stop",  # want to use REML, so don't bother running
-			                  "-num_stimts", "1",
-			                  "-stim_label", "1", "ON",
-			                  "-stim_times", "1", time_str, model_str
+			glm_cmd.extend( [ "-stim_times",
+			                  "{n:d}".format( n = i_patch + 1 ),
+			                  paths.loc.timing_base.full( "_{n:02d}.txt".format( n = i_patch ) ),
+			                  model_str
 			                ]
 			              )
 
-			# run this first GLM
-			fmri_tools.utils.run_cmd( " ".join( glm_cmd ) )
+			glm_cmd.extend( [ "-stim_label",
+			                  "{n:d}".format( n = i_patch + 1 ),
+			                  "p{n:02d}".format( n = i_patch )
+			                ]
+			              )
 
-			# delete the annoying command file that 3dDeconvolve writes
-			os.remove( "Decon.REML_cmd" )
+		# run this first GLM
+		fmri_tools.utils.run_cmd( " ".join( glm_cmd ) )
 
-			reml_cmd = [ "3dREMLfit",
-			             "-matrix", "exp_design.xmat.1D",
-			             "-Rbeta", loc_paths.beta.file( "_{hemi:s}.niml.dset".format( hemi = hemi ) ),
-			             "-tout",
-			             "-Rbuck", loc_paths.glm.file( "_{hemi:s}.niml.dset".format( hemi = hemi ) ),
-			             "-overwrite",
-			             "-input",
-			             paths.func.surfs[ run_num - 1 ].full( "_{hemi:s}.niml.dset".format( hemi = hemi ) )
-			           ]
+		# delete the annoying command file that 3dDeconvolve writes
+		os.remove( "Decon.REML_cmd" )
 
-			# run the proper GLM
-			fmri_tools.utils.run_cmd( " ".join( reml_cmd ) )
+		reml_cmd = [ "3dREMLfit",
+		             "-matrix", "exp_design.xmat.1D",
+		             "-Rbeta", paths.loc.beta.file( "_{hemi:s}.niml.dset".format( hemi = hemi ) ),
+		             "-tout",
+		             "-Rbuck", paths.loc.glm.file( "_{hemi:s}.niml.dset".format( hemi = hemi ) ),
+		             "-overwrite",
+		             "-input"
+		           ]
+
+		reml_cmd.append( "'" +
+		                 " ".join( [ paths.func.surfs[ n - 1 ].full( "_{hemi:s}.niml.dset".format( hemi = hemi ) )
+		                             for n in conf.subj.loc_runs
+		                           ]
+		                         ) +
+		                 "'"
+		               )
+
+		# run the proper GLM
+		fmri_tools.utils.run_cmd( " ".join( reml_cmd ) )
 
 	os.chdir( start_dir )
 
 
-def loc_mask( conf, paths ):
+def loc_patch_id( conf, paths ):
 	"""Form a mask from the GLM output"""
 
 	logger = logging.getLogger( __name__ )
-	logger.info( "Running localising mask creation..." )
+	logger.info( "Running localiser patch identification..." )
 
-	# these are the indices into the GLM files for the data we want to convert
-	loc_brick = "[2]"
+	# these are the t-statistics for each patch
+	beta_bricks = "[2..64(2)]"
 
-	loc_paths = paths.loc.loc[ "stim" ]
+	# 3.3 == p of 0.001
+	t_cutoff = 3.3 #2.58
+
+	os.chdir( paths.loc.base.full() )
 
 	for hemi in [ "lh", "rh" ]:
 
-		glm_path = ( loc_paths.glm.full( "_{hemi:s}.niml.dset".format( hemi = hemi ) ) +
-		             loc_brick
+		glm_path = ( paths.loc.glm.full( "_{hemi:s}.niml.dset".format( hemi = hemi ) ) +
+		             beta_bricks
 		           )
 
-		# check that the label is as expected
-		glm_label = fmri_tools.utils.get_dset_label( glm_path )
-		assert( glm_label == [ "ON#0_Tstat" ] )
+		amax_cmd = [ "3dTstat",
+		             "-overwrite",
+		             "-argmax1",
+		             "-max",
+		             "-prefix", paths.loc.patch_id.full( "_{hemi:s}.niml.dset".format( hemi = hemi ) ),
+		             glm_path
+		           ]
 
-		fdr_path = loc_paths.fdr.full( "_{hemi:s}.niml.dset".format( hemi = hemi ) )
-		mask_path = loc_paths.mask.full( "_{hemi:s}.niml.dset".format( hemi = hemi ) )
+		fmri_tools.utils.run_cmd( " ".join( amax_cmd ) )
 
-		fmri_tools.utils.loc_mask( glm_path = glm_path,
-		                           fdr_path = fdr_path,
-		                           mask_path = mask_path,
-		                           q_thresh = conf.ana.loc_q,
-		                           pos_only = False
-		                         )
+		thr_cmd = [ "3dcalc",
+		            "-a", paths.loc.patch_id.full( "_{hemi:s}.niml.dset[1]".format( hemi = hemi ) ),
+		            "-expr", "'step(a-{t:.4f})'".format( t = t_cutoff ),
+		            "-prefix", paths.loc.patch_thr.full( "_{hemi:s}.niml.dset".format( hemi = hemi ) ),
+		            "-overwrite"
+		          ]
 
-		pad_mask_path = loc_paths.mask.full( "_{hemi:s}-full.niml.dset".format( hemi = hemi ) )
-		pad_nodes = "{nk:d}".format( nk = conf.subj.node_k[ hemi ] )
+		fmri_tools.utils.run_cmd( " ".join( thr_cmd ) )
 
-		fmri_tools.utils.sparse_to_full( in_dset = mask_path,
-		                                 out_dset = pad_mask_path,
-		                                 pad_node = pad_nodes
+		bk_dset = paths.loc.patch.full( "_{hemi:s}.niml.dset".format( hemi = hemi ) )
+
+		bk_cmd = [ "3dbucket",
+		           "-overwrite",
+		           "-prefix", bk_dset,
+		           paths.loc.patch_id.full( "_{hemi:s}.niml.dset".format( hemi = hemi ) ),
+		           paths.loc.patch_thr.full( "_{hemi:s}.niml.dset".format( hemi = hemi ) )
+		         ]
+
+		fmri_tools.utils.run_cmd( " ".join( bk_cmd ) )
+
+		full_bk_dset = paths.loc.patch.full( "_{hemi:s}-full.niml.dset".format( hemi = hemi ) )
+
+		fmri_tools.utils.sparse_to_full( in_dset = bk_dset,
+		                                 out_dset = full_bk_dset,
+		                                 pad_node = "{n:d}".format( n = conf.subj.node_k[ hemi ] )
 		                               )
+
+		roi_path = paths.roi.vl.full( "_{hemi:s}-full.niml.dset".format( hemi = hemi ) )
+
+		txt_path = paths.loc.patch.full( "_{hemi:s}.txt".format( hemi = hemi ) )
+
+		# 3dmaskdump won't overwrite, so need to manually remove any previous file
+		if os.path.exists( txt_path ):
+			os.remove( txt_path )
+
+		xtr_cmd = [ "3dmaskdump",
+		            "-mask", full_bk_dset + "[2]",
+		            "-noijk",
+		            "-o", txt_path,
+		            roi_path,
+		            full_bk_dset + "[0]"
+		          ]
+
+		fmri_tools.utils.run_cmd( " ".join( xtr_cmd ) )
+
 
 
 def beta_to_psc( conf, paths ):
