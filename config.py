@@ -31,7 +31,22 @@ def _get_exp_conf():
 
 	exp_conf.id = "ns_patches"
 
-#	exp_conf.
+	exp_conf.mod_patches = range( 28 )
+	_ = [ exp_conf.mod_patches.remove( p )
+	      for p in [ 20 - 1, 26 - 1 ]
+	    ]
+
+	exp_conf.n_mod_patches = len( exp_conf.mod_patches )
+
+	exp_conf.n_incoh_patches = exp_conf.n_mod_patches / 2
+
+	exp_conf.n_img = 20
+
+	exp_conf.n_img_rep_per_run = 4
+
+	exp_conf.n_img_incoh_per_run = 2
+
+	exp_conf.n_trials = exp_conf.n_img * exp_conf.n_img_rep_per_run
 
 	return exp_conf
 
@@ -249,55 +264,54 @@ def check_loc_timing( conf, run_timing ):
 
 def make_exp_timing( conf ):
 
-	n_img = 20
-	n_rep = 4
-	n_trials = n_img * n_rep
+	img_seq = np.repeat( np.arange( conf.exp.n_img ),
+	                     conf.exp.n_img_rep_per_run
+	                   )
 
-	img_list = np.repeat( np.arange( n_img ), n_rep )
+	np.random.shuffle( img_seq )
 
-	np.random.shuffle( img_list )
+	trials = np.tile( img_seq, ( conf.stim.n_patches, 1 ) )
 
-	trials = np.tile( img_list, ( conf.stim.n_patches, 1 ) )
-
-	assert trials.shape == ( conf.stim.n_patches, n_img * n_rep )
-
-	incoh_k = np.zeros( conf.stim.n_patches )
-	max_incoh_k = 20
-
-	t_off = n_trials / 2
-
-	for i_trial in xrange( n_trials / 2 ):
-
-		# find the patches that haven't had their quota of incoherent trials
-		candidates = np.where( incoh_k < max_incoh_k )[ 0 ]
-
-		np.random.shuffle( candidates )
-
-		sel = []
-
-		i_cand = 0
-
-		while len( sel ) < ( conf.stim.n_patches / 2 ):
-
-			cand_img = trials[ candidates[ i_cand ], i_trial ]
-
-			mate_img = trials[ candidates[ i_cand ], i_trial + t_off ]
-
-			print cand_img, mate_img
-			print i_trial
-
-			if cand_img != mate_img:
-				sel.append( candidates[ i_cand ] )
-				incoh_k[ candidates[ i_cand ] ] += 1
-
-			i_cand += 1
+	assert trials.shape == ( conf.stim.n_patches,
+	                         conf.exp.n_img * conf.exp.n_img_rep_per_run
+	                       )
 
 
-		for s in sel:
+	trial_coh = sel_coh( conf.exp.n_mod_patches,
+	                     conf.exp.n_incoh_patches,
+	                     conf.exp.n_trials
+	                   )
 
-			trials[ s, i_trial ] = trials[ s, i_trial + t_off ]
+	for i_incoh_patch in xrange( conf.exp.n_mod_patches ):
 
-	return trials
+		i_patch = conf.exp.mod_patches[ i_incoh_patch ]
+
+		# find the trials where this patch is designated as incoherent
+		( _, incoh_trials ) = np.where( trial_coh == i_incoh_patch )
+
+		success = False
+
+		while not success:
+
+			# get the image sequence for this patch and its incoherent trials
+			base_seq = trials[ i_patch, incoh_trials ]
+
+			# generate a shuffled image sequence for the incoherent trials
+			perm_seq = base_seq[ np.random.permutation( len( base_seq ) ) ]
+
+			# test whether the shuffled sequence has replaced an image with the same
+			# image - no good
+			diff_img = ( base_seq - perm_seq ) != 0
+
+			if np.all( diff_img ):
+
+				success = True
+
+				trials[ i_patch, incoh_trials ] = perm_seq
+
+
+
+	return ( trials, trial_coh )
 
 
 def sel_coh( n_patch, n_coh, n_trials ):
@@ -308,15 +322,44 @@ def sel_coh( n_patch, n_coh, n_trials ):
 
 	while not success:
 
-		coh = np.array( [ np.random.choice( n_patch, n_coh, False )
-		                  for _ in xrange( n_trials )
-		                ]
-		              )
+		restart = False
 
-		test = np.array( [ ( coh == p ).sum() for p in xrange( n_patch ) ] )
+		coh_k = np.zeros( n_patch )
 
-		if np.all( test == max_coh ):
+		coh = np.empty( ( n_coh, n_trials ) )
+
+		for i_trial in xrange( n_trials ):
+
+			p = ( 1 - ( coh_k / float( max_coh ) ) )
+			p /= p.sum()
+
+			try:
+				sel = np.random.choice( n_patch,
+				                        n_coh,
+				                        False,
+				                        p
+				                      )
+			except ValueError:
+				restart = True
+				break
+
+			coh[ :, i_trial ] = sel
+
+			coh_k[ sel ] += 1
+
+		if not restart:
 			success = True
 
+	assert np.all( np.array( [ ( coh == p ).sum() for p in xrange( n_patch ) ] )
+	               == max_coh
+	             )
+
+	assert np.all( np.histogram( coh.flatten(), np.arange( n_patch + 1 ) )[ 0 ]
+	               == max_coh
+	             )
+
+	assert np.all( np.array( [ len( np.unique( c ) ) for c in coh.T ] )
+	               == n_coh
+	             )
 
 	return coh
