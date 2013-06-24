@@ -36,6 +36,23 @@ def _get_exp_conf():
 
 	exp_conf.id = "ns_patches"
 
+	exp_conf.mod_patches = range( 28 )
+	_ = [ exp_conf.mod_patches.remove( p )
+	      for p in [ 20 - 1, 26 - 1 ]
+	    ]
+
+	exp_conf.n_mod_patches = len( exp_conf.mod_patches )
+
+	exp_conf.n_incoh_patches = exp_conf.n_mod_patches / 2
+
+	exp_conf.n_img = 20
+
+	exp_conf.n_img_rep_per_run = 4
+
+	exp_conf.n_img_incoh_per_run = 2
+
+	exp_conf.n_trials = exp_conf.n_img * exp_conf.n_img_rep_per_run
+
 	return exp_conf
 
 
@@ -44,7 +61,6 @@ def _get_ana_conf():
 	ana_conf = ConfigContainer()
 
 	return ana_conf
-
 
 def _get_acq_conf():
 	"""Get the acquisition configuration"""
@@ -167,7 +183,6 @@ def _get_stim_conf():
 
 
 	return stim_conf
-
 
 def _get_subj_conf( subj_id = None ):
 
@@ -317,7 +332,7 @@ def _get_subj_conf( subj_id = None ):
 		return subj.subj[ subj_id ]
 
 
-def make_timing( conf ):
+def make_loc_timing( conf ):
 
 	exp_paths = ns_patches.paths.get_exp_paths( conf )
 
@@ -381,7 +396,7 @@ def make_timing( conf ):
 		timing_file.close()
 
 
-def check_timing( conf, run_timing ):
+def check_loc_timing( conf, run_timing ):
 
 	cmd = [ "3dDeconvolve",
 	        "-nodata",
@@ -405,5 +420,104 @@ def check_timing( conf, run_timing ):
 	print " ".join( cmd )
 
 
+def make_exp_timing( conf ):
+
+	img_seq = np.repeat( np.arange( conf.exp.n_img ),
+	                     conf.exp.n_img_rep_per_run
+	                   )
+
+	np.random.shuffle( img_seq )
+
+	trials = np.tile( img_seq, ( conf.stim.n_patches, 1 ) )
+
+	assert trials.shape == ( conf.stim.n_patches,
+	                         conf.exp.n_img * conf.exp.n_img_rep_per_run
+	                       )
 
 
+	trial_coh = sel_coh( conf.exp.n_mod_patches,
+	                     conf.exp.n_incoh_patches,
+	                     conf.exp.n_trials
+	                   )
+
+	for i_incoh_patch in xrange( conf.exp.n_mod_patches ):
+
+		i_patch = conf.exp.mod_patches[ i_incoh_patch ]
+
+		# find the trials where this patch is designated as incoherent
+		( _, incoh_trials ) = np.where( trial_coh == i_incoh_patch )
+
+		success = False
+
+		while not success:
+
+			# get the image sequence for this patch and its incoherent trials
+			base_seq = trials[ i_patch, incoh_trials ]
+
+			# generate a shuffled image sequence for the incoherent trials
+			perm_seq = base_seq[ np.random.permutation( len( base_seq ) ) ]
+
+			# test whether the shuffled sequence has replaced an image with the same
+			# image - no good
+			diff_img = ( base_seq - perm_seq ) != 0
+
+			if np.all( diff_img ):
+
+				success = True
+
+				trials[ i_patch, incoh_trials ] = perm_seq
+
+
+
+	return ( trials, trial_coh )
+
+
+def sel_coh( n_patch, n_coh, n_trials ):
+
+	max_coh = n_trials / 2
+
+	success = False
+
+	while not success:
+
+		restart = False
+
+		coh_k = np.zeros( n_patch )
+
+		coh = np.empty( ( n_coh, n_trials ) )
+
+		for i_trial in xrange( n_trials ):
+
+			p = ( 1 - ( coh_k / float( max_coh ) ) )
+			p /= p.sum()
+
+			try:
+				sel = np.random.choice( n_patch,
+				                        n_coh,
+				                        False,
+				                        p
+				                      )
+			except ValueError:
+				restart = True
+				break
+
+			coh[ :, i_trial ] = sel
+
+			coh_k[ sel ] += 1
+
+		if not restart:
+			success = True
+
+	assert np.all( np.array( [ ( coh == p ).sum() for p in xrange( n_patch ) ] )
+	               == max_coh
+	             )
+
+	assert np.all( np.histogram( coh.flatten(), np.arange( n_patch + 1 ) )[ 0 ]
+	               == max_coh
+	             )
+
+	assert np.all( np.array( [ len( np.unique( c ) ) for c in coh.T ] )
+	               == n_coh
+	             )
+
+	return coh
