@@ -31,6 +31,8 @@ def _get_exp_conf():
 
 	exp_conf.id = "ns_patches"
 
+#	exp_conf.
+
 	return exp_conf
 
 
@@ -157,7 +159,7 @@ def _get_stim_conf():
 	return stim_conf
 
 
-def make_timing( conf ):
+def make_loc_timing( conf ):
 
 	exp_paths = ns_patches.paths.get_exp_paths( conf )
 
@@ -221,7 +223,7 @@ def make_timing( conf ):
 		timing_file.close()
 
 
-def check_timing( conf, run_timing ):
+def check_loc_timing( conf, run_timing ):
 
 	cmd = [ "3dDeconvolve",
 	        "-nodata",
@@ -245,5 +247,76 @@ def check_timing( conf, run_timing ):
 	print " ".join( cmd )
 
 
+def make_exp_timing( conf ):
+
+	n_img = 20
+	n_rep = 4
+	n_trials = n_img * n_rep
+
+	img_list = np.repeat( np.arange( n_img ), n_rep )
+
+	np.random.shuffle( img_list )
+
+	trials = np.tile( img_list, ( conf.stim.n_patches, 1 ) )
+
+	assert trials.shape == ( conf.stim.n_patches, n_img * n_rep )
+
+	incoh_k = np.zeros( conf.stim.n_patches )
+	max_incoh_k = 20
+
+	t_off = n_trials / 2
+
+	for i_trial in xrange( n_trials / 2 ):
+
+		# find the patches that haven't had their quota of incoherent trials
+		candidates = np.where( incoh_k < max_incoh_k )[ 0 ]
+
+		np.random.shuffle( candidates )
+
+		sel = []
+
+		i_cand = 0
+
+		while len( sel ) < ( conf.stim.n_patches / 2 ):
+
+			cand_img = trials[ candidates[ i_cand ], i_trial ]
+
+			mate_img = trials[ candidates[ i_cand ], i_trial + t_off ]
+
+			print cand_img, mate_img
+			print i_trial
+
+			if cand_img != mate_img:
+				sel.append( candidates[ i_cand ] )
+				incoh_k[ candidates[ i_cand ] ] += 1
+
+			i_cand += 1
 
 
+		for s in sel:
+
+			trials[ s, i_trial ] = trials[ s, i_trial + t_off ]
+
+	return trials
+
+
+def sel_coh( n_patch, n_coh, n_trials ):
+
+	max_coh = n_trials / 2
+
+	success = False
+
+	while not success:
+
+		coh = np.array( [ np.random.choice( n_patch, n_coh, False )
+		                  for _ in xrange( n_trials )
+		                ]
+		              )
+
+		test = np.array( [ ( coh == p ).sum() for p in xrange( n_patch ) ] )
+
+		if np.all( test == max_coh ):
+			success = True
+
+
+	return coh
