@@ -183,8 +183,8 @@ def _get_stim_conf():
 			i_patch += 1
 
 
-	stim.mask_edge = "raisedCos"
-	stim.mask_edge_frac = 0.4
+	stim_conf.mask_edge = "raisedCos"
+	stim_conf.mask_edge_frac = 0.4
 
 	return stim_conf
 

@@ -6,7 +6,7 @@ import psychopy.filters
 
 import stimuli.utils, stimuli.upenn_db
 
-import ns_patches.config, ns_patches.paths #bmatch.stimulus
+import ns_patches.config, ns_patches.paths, ns_patches.stimulus
 
 
 def img_browser( skip_discarded = True,
@@ -30,13 +30,13 @@ def img_browser( skip_discarded = True,
 	"""
 
 	conf = ns_patches.config.get_conf()
-	paths = ns_patches.config.get_exp_paths()
+	paths = ns_patches.paths.get_exp_paths( conf )
 
 	img_db_info = read_img_db_info( paths.img_db_info )
 
 	win = psychopy.visual.Window( ( 1024, 768 ),
-	                              fullscr = True,
-	                              allowGUI = False,
+	                              fullscr = False,
+	                              allowGUI = True,
 	                              monitor = conf.acq.test_monitor_name,
 	                              units = "pix"
 	                            )
@@ -56,6 +56,12 @@ def img_browser( skip_discarded = True,
 		i_first = np.where( img_db_info[ "id" ] == seek_to_id )[ 0 ][ 0 ]
 
 	i_img = i_first
+
+	n_active = conf.stim.n_patches
+	n_distract = 0
+
+	change_image = True
+	change_distractors = False
 
 	keep_going = True
 
@@ -81,31 +87,38 @@ def img_browser( skip_discarded = True,
 		                         img_info[ "image" ]
 		                       )
 
-		try:
-			stim = bmatch.stimulus.Stimulus( win = win,
-			                                 img_file = img_path,
-			                                 tex_rad_pix = conf.stim.tex_rad_pix,
-			                                 ap_rad_pix = conf.stim.ap_rad_pix,
-			                                 patch_rad_pix = conf.stim.patch_rad_pix,
-			                                 noise_rad_pix = conf.stim.noise_rad_pix,
-			                                 h_shift = img_info[ "h_shift" ],
-			                                 v_shift = img_info[ "v_shift" ]
-			                               )
-		except:
-			print img_path
-			win.close()
-			raise
+		if change_image:
+			if "stim" in locals():
+				stim._img_file = img_path
+				stim._set_image()
+				stim.reset_curr_mask()
+			else:
+				try:
+					stim = ns_patches.stimulus.Stimulus( win = win,
+					                                     img_file = img_path,
+					                                     patch_info = conf.stim.patches,
+					                                     active_patches = range( n_active )
+					                                   )
+				except:
+					print img_path
+					win.close()
+					raise
+
+			if n_distract > 0 and change_distractors:
+
+				pass
 
 		status = psychopy.visual.TextStim( win = win,
 		                                   text = "placeholder",
-		                                   pos = ( 300, 0 ),
+		                                   pos = ( 0, -300 ),
 		                                   units = "pix",
-		                                   alignHoriz = "left"
+		                                   alignHoriz = "center"
 		                                 )
 
 		change_image = False
+		change_distractors = False
 
-		while not change_image:
+		while not change_image and not change_distractors:
 
 			stim.draw()
 
@@ -113,16 +126,9 @@ def img_browser( skip_discarded = True,
 			             "Album: " + img_info[ "album" ],
 			             "Image: " + img_info[ "image" ],
 			             "Status: " + img_info[ "status" ],
-			             "H shift: {h:d}".format( h = img_info[ "h_shift" ] ),
-			             "V shift: {v:d}".format( v = img_info[ "v_shift" ] ),
-			             "Img. vis.: {v!r}".format( v = stim.img_visible ),
-			             "Patch vis.: {v!r}".format( v = stim.patch_visible ),
-			             "Outer img. vis.: {v!r}".format( v = stim.outer_img_visible ),
-			             "Patch mean: {m:.3f}".format( m = stim.get_patch_mean( normed = True ) ),
-			             "Patch var: {v:.3f}".format( v = stim.get_patch_var() )
 			           ]
 
-			status.setText( "\n".join( stat_txt ) )
+			status.setText( "\t".join( stat_txt ) )
 
 			status.draw()
 
@@ -147,41 +153,24 @@ def img_browser( skip_discarded = True,
 					i_img += 1
 					change_image = True
 
-				elif key == "left":
-					img_info[ "h_shift" ] -= 1
-
-				elif key == "right":
-					img_info[ "h_shift" ] += 1
-
-				elif key == "up":
-					img_info[ "v_shift" ] += 1
-
-				elif key == "down":
-					img_info[ "v_shift" ] -= 1
-
-				elif key == "i":
-					stim.set_img_visible( not stim.img_visible )
-
-				elif key == "a":
-					stim.set_outer_img_visible( not stim.outer_img_visible )
-
-				elif key == "m":
-					stim.set_patch_visible( not stim.patch_visible )
-
 				elif key == "y":
 					img_info[ "status" ] = "Y"
 
 				elif key == "n":
 					img_info[ "status" ] = "N"
 
-				if key in [ "left", "right", "up", "down" ]:
-					stim.set_shifts( [ img_info[ "h_shift" ], img_info[ "v_shift" ] ] )
-
+				elif key == "m":
+					if n_active == 0:
+						stim.enable_mask()
+						n_active = conf.stim.n_patches
+					else:
+						stim.disable_mask()
+						n_active = 0
 
 	win.close()
 
 	if save_changes:
-		save_img_db_info( img_db_file = conf.paths.img_db_info,
+		save_img_db_info( img_db_file = paths.img_db_info,
 		                  img_db_info = img_db_info
 		                )
 
