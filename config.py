@@ -68,6 +68,7 @@ def _get_acq_conf():
 	acq_conf = ConfigContainer()
 
 	acq_conf.monitor_name = "UMN_7T"
+	acq_conf.test_monitor_name = "N13_CRT"
 
 	acq_conf.tr_s = 2.0
 
@@ -181,6 +182,9 @@ def _get_stim_conf():
 
 			i_patch += 1
 
+
+	stim.mask_edge = "raisedCos"
+	stim.mask_edge_frac = 0.4
 
 	return stim_conf
 
@@ -369,7 +373,8 @@ def make_loc_timing( conf ):
 
 		timing_csv = csv.writer( timing_file, delimiter = " " )
 
-		for run_num in xrange( 1, conf.loc.n_max_runs + 1 ):
+		# loop over runs
+		for _ in xrange( 1, conf.loc.n_max_runs + 1 ):
 
 			t = np.ones( ( n_evt ) )
 
@@ -420,35 +425,57 @@ def check_loc_timing( conf, run_timing ):
 	print " ".join( cmd )
 
 
-def make_exp_timing( conf ):
+def gen_exp_patch_timing( conf ):
+	"""Generates the image timing patterns for each patch.
 
+	Paramters
+	---------
+	conf : ns_patches.config.get_conf() object
+		Configuration info
+
+	Returns
+	-------
+	trials : numpy array of ints, ( n_patches, n_trials )
+		Each entry contains the image index for each patch and trial
+
+	"""
+
+	# generate a vector with the image indices repeated the number of repetitions
 	img_seq = np.repeat( np.arange( conf.exp.n_img ),
 	                     conf.exp.n_img_rep_per_run
 	                   )
 
+	# and shake them up
 	np.random.shuffle( img_seq )
 
+	# propogate the sequence for each of the patches
 	trials = np.tile( img_seq, ( conf.stim.n_patches, 1 ) )
 
+	# just check its how we think it is
 	assert trials.shape == ( conf.stim.n_patches,
 	                         conf.exp.n_img * conf.exp.n_img_rep_per_run
 	                       )
 
-
+	# calculate the sequence of incoherent patches per trial
 	trial_incoh = sel_incoh( conf.exp.n_mod_patches,
 	                         conf.exp.n_incoh_patches,
 	                         conf.exp.n_trials
 	                       )
 
+	# we only need to consider the patches that will be modified; the others
+	# already have their image set
 	for i_incoh_patch in xrange( conf.exp.n_mod_patches ):
 
+		# find out which patch, overall, this mod patch corresponds to
 		i_patch = conf.exp.mod_patches[ i_incoh_patch ]
 
 		# find the trials where this patch is designated as incoherent
 		( _, incoh_trials ) = np.where( trial_incoh == i_incoh_patch )
 
+		# when we do the shuffling of the incoherent events, we want to avoid
+		# replacing an image with the same image, by chance. so we might need to
+		# iterate a few times
 		success = False
-
 		while not success:
 
 			# get the image sequence for this patch and its incoherent trials
@@ -466,8 +493,6 @@ def make_exp_timing( conf ):
 				success = True
 
 				trials[ i_patch, incoh_trials ] = perm_seq
-
-
 
 	return trials
 
