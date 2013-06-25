@@ -17,6 +17,9 @@ def get_exp_paths( conf ):
 
 	exp.timing_dir = os.path.join( exp.base_dir, "timing" )
 
+	exp.img_db_info = os.path.join( exp.base_dir, "img_info.txt" )
+	exp.img_db = os.path.join( exp.base_dir, "img_db" )
+
 	return exp
 
 

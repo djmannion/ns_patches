@@ -221,7 +221,7 @@ def get_stim( win, conf ):
 
 	stim = [ psychopy.visual.GratingStim( win = win,
 	                                      tex = "sqrXsqr",
-	                                      mask = "raisedCos",
+	                                      mask = conf.stim.mask_edge,
 	                                      pos = ( patch[ "cx" ], patch[ "cy" ] ),
 	                                      units = "pix",
 	                                      size = patch[ "diam" ],
@@ -229,7 +229,9 @@ def get_stim( win, conf ):
 	                                      ori = 45.0,
 	                                      phase = np.random.rand(),
 	                                      contrast = 0.0,
-	                                      maskParams = { "fringeWidth" : 0.4 }
+	                                      maskParams = { "fringeWidth" :
+	                                                     conf.stim.mask_edge_frac
+	                                                   }
 	                                    )
 	        for patch in conf.stim.patches
 	      ]
