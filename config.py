@@ -435,17 +435,17 @@ def make_exp_timing( conf ):
 	                       )
 
 
-	trial_coh = sel_coh( conf.exp.n_mod_patches,
-	                     conf.exp.n_incoh_patches,
-	                     conf.exp.n_trials
-	                   )
+	trial_incoh = sel_incoh( conf.exp.n_mod_patches,
+	                         conf.exp.n_incoh_patches,
+	                         conf.exp.n_trials
+	                       )
 
 	for i_incoh_patch in xrange( conf.exp.n_mod_patches ):
 
 		i_patch = conf.exp.mod_patches[ i_incoh_patch ]
 
 		# find the trials where this patch is designated as incoherent
-		( _, incoh_trials ) = np.where( trial_coh == i_incoh_patch )
+		( _, incoh_trials ) = np.where( trial_incoh == i_incoh_patch )
 
 		success = False
 
@@ -469,55 +469,94 @@ def make_exp_timing( conf ):
 
 
 
-	return ( trials, trial_coh )
+	return trials
 
 
-def sel_coh( n_patch, n_coh, n_trials ):
+def sel_incoh( n_patch, n_incoh, n_trials ):
+	"""Select the patches that will be incoherent in each trial.
 
-	max_coh = n_trials / 2
+	Parameters
+	----------
+	n_patch : integer
+		Number of patches overall on a given trial
+	n_incoh : integer
+		Number of incoherent patches per trial
+	n_trials : integer
+		Total number of trials
 
+	Returns
+	-------
+	incoh : numpy array of integers, ( incoh_patch, trial )
+		Incoherent patch indices for each trial
+
+	"""
+
+	# allocate half the patches on each trial to be incoherent
+	total_incoh = n_trials / 2
+
+	# we may need to try a few times
 	success = False
 
 	while not success:
 
 		restart = False
 
-		coh_k = np.zeros( n_patch )
+		# keep track of the number of incoherent events there has been in each
+		# patch
+		incoh_k = np.zeros( n_patch )
 
-		coh = np.empty( ( n_coh, n_trials ) )
+		# initialise the container
+		incoh = np.empty( ( n_incoh, n_trials ) )
+		incoh.fill( np.NAN )
 
 		for i_trial in xrange( n_trials ):
 
-			p = ( 1 - ( coh_k / float( max_coh ) ) )
+			# want to make the probabilty of assigning a given patch to be incoherent
+			# on this trial as proportional to a lack of assignment in previous
+			# trials
+			p = ( 1 - ( incoh_k / float( total_incoh ) ) )
 			p /= p.sum()
 
+			# `choice` throws a ValueError if there aren't enough non-zero
+			# probability entries - meaning this sequence is a dud
 			try:
-				sel = np.random.choice( n_patch,
-				                        n_coh,
-				                        False,
-				                        p
+				# choose a set of incoherent patches from a weighted sample of all
+				# patches
+				sel = np.random.choice( a = n_patch,
+				                        size = n_incoh,
+				                        replace = False,  # without replacement
+				                        p = p
 				                      )
 			except ValueError:
 				restart = True
 				break
 
-			coh[ :, i_trial ] = sel
+			# assign the chosen patches
+			incoh[ :, i_trial ] = sel
 
-			coh_k[ sel ] += 1
+			# increment the counters for the chosen patches
+			incoh_k[ sel ] += 1
 
+		# if we'd made it this far, and havent been asked to restart, then we have
+		# a good set
 		if not restart:
 			success = True
 
-	assert np.all( np.array( [ ( coh == p ).sum() for p in xrange( n_patch ) ] )
-	               == max_coh
+	# ... but let's make sure
+	# 1. each patch should have half the number of trials assigned as incoherent
+	assert np.all( np.array( [ ( incoh == p ).sum() for p in xrange( n_patch ) ] )
+	               == total_incoh
 	             )
 
-	assert np.all( np.histogram( coh.flatten(), np.arange( n_patch + 1 ) )[ 0 ]
-	               == max_coh
+	# 2. pretty similar to the above
+	assert np.all( np.histogram( incoh.flatten(), np.arange( n_patch + 1 ) )[ 0 ]
+	               == total_incoh
 	             )
 
-	assert np.all( np.array( [ len( np.unique( c ) ) for c in coh.T ] )
-	               == n_coh
+	# 3. number of unique patches on each trial should equal the number of
+	# incoherent patches
+	assert np.all( np.array( [ len( np.unique( c ) ) for c in incoh.T ] )
+	               == n_incoh
 	             )
 
-	return coh
+	return incoh
