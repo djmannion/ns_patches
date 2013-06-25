@@ -75,6 +75,20 @@ class Stimulus( object ):
 		                                           units = "pix"
 		                                         )
 
+	def reset_curr_mask( self ):
+
+		self._img_tex.setMask( self._mask )
+
+
+	def disable_mask( self ):
+
+		self._img_tex.setMask( np.ones( self._mask.shape ) )
+
+
+	def enable_mask( self ):
+
+		self._img_tex.setMask( self._mask )
+
 
 	def _set_mask( self ):
 		"""Sets the visibility mask"""
@@ -84,7 +98,7 @@ class Stimulus( object ):
 		                 ]
 
 		# start off with the mask in [ 0, 1 ] range, to make it easier
-		mask = np.zeros( ( self._img_size ) )
+		mask = np.zeros( ( self._img_size ) ) + 0.0
 
 		# stop the lines below getting a bit unwieldy
 		mask_func = psychopy.filters.makeMask
@@ -105,6 +119,8 @@ class Stimulus( object ):
 			                 )
 
 		# convert to [ -1, +1 ]
-		mask = mask * 2.0 - 1.0
+		self._mask = mask * 2.0 - 1.0
 
-		self._img_tex.setMask( mask )
+		self._mask = np.clip( self._mask, -1, +1 )
+
+		self._img_tex.setMask( self._mask )
