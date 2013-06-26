@@ -58,14 +58,24 @@ def img_browser( skip_discarded = True,
 	i_img = i_first
 
 	n_active = conf.stim.n_patches
-	n_distract = 0
+	n_distract = 13
+
+	incoh = ns_patches.config.sel_incoh( n_patch = conf.exp.n_mod_patches,
+	                                     n_incoh = conf.exp.n_incoh_patches,
+	                                     n_trials = 80
+	                                   )
 
 	change_image = True
-	change_distractors = False
+	change_distractors = True
+
+	i_trial = 0
 
 	keep_going = True
 
 	while keep_going:
+
+		incoh_patches = [ conf.exp.mod_patches[ int( i ) ] for i in incoh[ :, i_trial ] ]
+		coh_patches = np.setdiff1d( np.arange( n_active ), incoh_patches )
 
 		img_ok = False
 
@@ -97,7 +107,7 @@ def img_browser( skip_discarded = True,
 					stim = ns_patches.stimulus.Stimulus( win = win,
 					                                     img_file = img_path,
 					                                     patch_info = conf.stim.patches,
-					                                     active_patches = range( n_active )
+					                                     active_patches = coh_patches
 					                                   )
 				except:
 					print img_path
@@ -106,7 +116,23 @@ def img_browser( skip_discarded = True,
 
 			if n_distract > 0 and change_distractors:
 
-				pass
+				incoh_stim = []
+
+				for i_incoh in incoh_patches:
+
+					i_incoh_img = np.random.choice( len( img_db_info ) )
+
+					incoh_file = os.path.join( paths.img_db,
+					                           img_db_info[ i_incoh_img ][ "album" ],
+					                           img_db_info[ i_incoh_img ][ "image" ]
+					                         )
+
+					incoh_stim.append( ns_patches.stimulus.Stimulus( win = win,
+					                                               img_file = incoh_file,
+					                                               patch_info = conf.stim.patches,
+					                                               active_patches = [ i_incoh ]
+					                                             )
+					                 )
 
 		status = psychopy.visual.TextStim( win = win,
 		                                   text = "placeholder",
@@ -121,6 +147,8 @@ def img_browser( skip_discarded = True,
 		while not change_image and not change_distractors:
 
 			stim.draw()
+
+			_ = [ istim.draw() for istim in incoh_stim ]
 
 			stat_txt = [ "ID: {id:d}".format( id = img_info[ "id" ] ),
 			             "Album: " + img_info[ "album" ],
