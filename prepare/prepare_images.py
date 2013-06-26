@@ -35,8 +35,8 @@ def img_browser( skip_discarded = True,
 	img_db_info = read_img_db_info( paths.img_db_info )
 
 	win = psychopy.visual.Window( ( 1024, 768 ),
-	                              fullscr = False,
-	                              allowGUI = True,
+	                              fullscr = True,
+	                              allowGUI = False,
 	                              monitor = conf.acq.test_monitor_name,
 	                              units = "pix"
 	                            )
@@ -98,7 +98,7 @@ def img_browser( skip_discarded = True,
 		                       )
 
 		if change_image:
-			if "stim" in locals():
+			if "stim" in [ "x" ]: # locals():
 				stim._img_file = img_path
 				stim._set_image()
 				stim.reset_curr_mask()
@@ -194,6 +194,10 @@ def img_browser( skip_discarded = True,
 					else:
 						stim.disable_mask()
 						n_active = 0
+
+				if change_image == True:
+					change_distractors = True
+					i_trial = np.mod( i_trial + 1, 80 )
 
 	win.close()
 
