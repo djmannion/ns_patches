@@ -35,11 +35,20 @@ def img_browser( skip_discarded = True,
 	img_db_info = read_img_db_info( paths.img_db_info )
 
 	win = psychopy.visual.Window( ( 1024, 768 ),
-	                              fullscr = True,
-	                              allowGUI = False,
+	                              fullscr = False,
+	                              allowGUI = True,
 	                              monitor = conf.acq.test_monitor_name,
 	                              units = "pix"
 	                            )
+
+	stim = set_stim( conf, win )
+
+	status = psychopy.visual.TextStim( win = win,
+	                                   text = "placeholder",
+	                                   pos = ( 0, -300 ),
+	                                   units = "pix",
+	                                   alignHoriz = "center"
+	                                 )
 
 	i_first = 0
 
@@ -57,16 +66,13 @@ def img_browser( skip_discarded = True,
 
 	i_img = i_first
 
-	n_active = conf.stim.n_patches
-	n_distract = 13
-
+	# calculate a set of incoherent patches for each image
 	incoh = ns_patches.config.sel_incoh( n_patch = conf.exp.n_mod_patches,
 	                                     n_incoh = conf.exp.n_incoh_patches,
 	                                     n_trials = 80
 	                                   )
 
 	change_image = True
-	change_distractors = True
 
 	i_trial = 0
 
@@ -75,7 +81,7 @@ def img_browser( skip_discarded = True,
 	while keep_going:
 
 		incoh_patches = [ conf.exp.mod_patches[ int( i ) ] for i in incoh[ :, i_trial ] ]
-		coh_patches = np.setdiff1d( np.arange( n_active ), incoh_patches )
+		coh_patches = np.setdiff1d( np.arange( conf.stim.n_patches ), incoh_patches )
 
 		img_ok = False
 
@@ -84,76 +90,44 @@ def img_browser( skip_discarded = True,
 			if i_img == len( img_db_info ):
 				i_img = 0
 
-			img_info = img_db_info[ i_img ]
+			coh_img_info = img_db_info[ i_img ]
 
-			if skip_discarded and img_info[ "status" ] == "N":
+			if skip_discarded and coh_img_info[ "status" ] == "N":
 				i_img += 1
 			else:
 				img_ok = True
 
-
+		# first set the coherent patches
 		img_path = os.path.join( paths.img_db,
-		                         img_info[ "album" ],
-		                         img_info[ "image" ]
+		                         coh_img_info[ "album" ],
+		                         coh_img_info[ "image" ]
 		                       )
 
-		if change_image:
-			if "stim" in [ "x" ]: # locals():
-				stim._img_file = img_path
-				stim._set_image()
-				stim.reset_curr_mask()
-			else:
-				try:
-					stim = ns_patches.stimulus.Stimulus( win = win,
-					                                     img_file = img_path,
-					                                     patch_info = conf.stim.patches,
-					                                     active_patches = coh_patches
-					                                   )
-				except:
-					print img_path
-					win.close()
-					raise
+		coh_img = ns_patches.stimulus.load_img( img_path )
 
-			if n_distract > 0 and change_distractors:
+		for coh_stim in stim[ coh_patches ]:
+			coh_stim.update_image( coh_img )
 
-				incoh_stim = []
+		# now set the incoherent patches
+		for incoh_stim in stim[ incoh_patches ]:
 
-				for i_incoh in incoh_patches:
+			i_incoh_img = np.random.choice( len( img_db_info ) )
 
-					i_incoh_img = np.random.choice( len( img_db_info ) )
+			incoh_path = os.path.join( paths.img_db,
+			                           img_db_info[ i_incoh_img ][ "album" ],
+			                           img_db_info[ i_incoh_img ][ "image" ]
+			                         )
 
-					incoh_file = os.path.join( paths.img_db,
-					                           img_db_info[ i_incoh_img ][ "album" ],
-					                           img_db_info[ i_incoh_img ][ "image" ]
-					                         )
+			incoh_stim.update_image( incoh_path )
 
-					incoh_stim.append( ns_patches.stimulus.Stimulus( win = win,
-					                                               img_file = incoh_file,
-					                                               patch_info = conf.stim.patches,
-					                                               active_patches = [ i_incoh ]
-					                                             )
-					                 )
+		while not change_image:
 
-		status = psychopy.visual.TextStim( win = win,
-		                                   text = "placeholder",
-		                                   pos = ( 0, -300 ),
-		                                   units = "pix",
-		                                   alignHoriz = "center"
-		                                 )
+			map( lambda x : x.draw(), stim )
 
-		change_image = False
-		change_distractors = False
-
-		while not change_image and not change_distractors:
-
-			stim.draw()
-
-			_ = [ istim.draw() for istim in incoh_stim ]
-
-			stat_txt = [ "ID: {id:d}".format( id = img_info[ "id" ] ),
-			             "Album: " + img_info[ "album" ],
-			             "Image: " + img_info[ "image" ],
-			             "Status: " + img_info[ "status" ],
+			stat_txt = [ "ID: {id:d}".format( id = coh_img_info[ "id" ] ),
+			             "Album: " + coh_img_info[ "album" ],
+			             "Image: " + coh_img_info[ "image" ],
+			             "Status: " + coh_img_info[ "status" ],
 			           ]
 
 			status.setText( "\t".join( stat_txt ) )
@@ -167,36 +141,35 @@ def img_browser( skip_discarded = True,
 			for key in keys:
 
 				if key == "q":
-					img_db_info[ i_img ] = img_info
+					img_db_info[ i_img ] = coh_img_info
 					keep_going = False
 					change_image = True
 
 				elif key in [ "lshift", "rshift" ]:
-					img_db_info[ i_img ] = img_info
+					img_db_info[ i_img ] = coh_img_info
 					i_img -= 1
 					change_image = True
 
 				elif key == "space":
-					img_db_info[ i_img ] = img_info
+					img_db_info[ i_img ] = coh_img_info
 					i_img += 1
 					change_image = True
 
 				elif key == "y":
-					img_info[ "status" ] = "Y"
+					coh_img_info[ "status" ] = "Y"
 
 				elif key == "n":
-					img_info[ "status" ] = "N"
+					coh_img_info[ "status" ] = "N"
 
-				elif key == "m":
-					if n_active == 0:
-						stim.enable_mask()
-						n_active = conf.stim.n_patches
-					else:
-						stim.disable_mask()
-						n_active = 0
+#				elif key == "m":
+#					if n_active == 0:
+#						stim.enable_mask()
+#						n_active = conf.stim.n_patches
+#					else:
+#						stim.disable_mask()
+#						n_active = 0
 
 				if change_image == True:
-					change_distractors = True
 					i_trial = np.mod( i_trial + 1, 80 )
 
 	win.close()
@@ -205,6 +178,24 @@ def img_browser( skip_discarded = True,
 		save_img_db_info( img_db_file = paths.img_db_info,
 		                  img_db_info = img_db_info
 		                )
+
+
+def set_stim( conf, win ):
+
+	stim = []
+
+	for patch_info in conf.stim.patches:
+
+		mask = ns_patches.stimulus.make_mask( patch_info, conf.stim.img_diam_pix )
+
+		stim.append( ns_patches.stimulus.Stimulus( win = win,
+		                                           img = np.ones( mask.shape ),
+		                                           mask = mask
+		                                         )
+		           )
+
+	return stim
+
 
 
 def read_img_db_info( img_db_file ):

@@ -186,6 +186,8 @@ def _get_stim_conf():
 	stim_conf.mask_edge = "raisedCos"
 	stim_conf.mask_edge_frac = 0.4
 
+	stim_conf.img_diam_pix = 1024
+
 	return stim_conf
 
 def _get_subj_conf( subj_id = None ):
