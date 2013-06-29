@@ -102,7 +102,7 @@ def make_mask( patch,
 	norm_rad = patch[ "diam" ] / img_size
 
 	norm_xy = ( np.array( [ patch[ "cx" ], patch[ "cy" ] ] ) /
-	            img_size / 2.0
+	            ( img_size / 2.0 )
 	          )
 
 	mask = mask_func( matrixSize = img_size,

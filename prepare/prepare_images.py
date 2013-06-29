@@ -72,7 +72,7 @@ def img_browser( skip_discarded = True,
 	                                     n_trials = 80
 	                                   )
 
-	change_image = True
+	change_image = False
 
 	i_trial = 0
 
@@ -105,11 +105,11 @@ def img_browser( skip_discarded = True,
 
 		coh_img = ns_patches.stimulus.load_img( img_path )
 
-		for coh_stim in stim[ coh_patches ]:
-			coh_stim.update_image( coh_img )
+		for i_coh_patch in coh_patches:
+			stim[ i_coh_patch ].update_image( coh_img )
 
 		# now set the incoherent patches
-		for incoh_stim in stim[ incoh_patches ]:
+		for i_incoh_patch in incoh_patches:
 
 			i_incoh_img = np.random.choice( len( img_db_info ) )
 
@@ -118,7 +118,10 @@ def img_browser( skip_discarded = True,
 			                           img_db_info[ i_incoh_img ][ "image" ]
 			                         )
 
-			incoh_stim.update_image( incoh_path )
+			stim[ i_incoh_patch ].update_image( incoh_path )
+
+		change_image = False
+		mask_off = False
 
 		while not change_image:
 
@@ -135,6 +138,7 @@ def img_browser( skip_discarded = True,
 			status.draw()
 
 			win.flip()
+
 
 			keys = psychopy.event.waitKeys()
 
@@ -161,7 +165,17 @@ def img_browser( skip_discarded = True,
 				elif key == "n":
 					coh_img_info[ "status" ] = "N"
 
-#				elif key == "m":
+				elif key == "m":
+					if not mask_off:
+						temp_mask = stim[ coh_patches[ -1 ] ]._mask.copy()
+						stim[ coh_patches[ -1 ] ].update_mask( None )
+						mask_off = True
+					else:
+						stim[ coh_patches[ -1 ] ].update_mask( temp_mask )
+						mask_off = False
+
+
+
 #					if n_active == 0:
 #						stim.enable_mask()
 #						n_active = conf.stim.n_patches
