@@ -42,6 +42,8 @@ def run( subj_id, run_num, show_perf = True ):
 	                              allowGUI = True
 	                            )
 
+	fix_stim = ns_patches.exp.loc.get_fixation( win, conf )
+
 	wait_str = "Loading stimuli..."
 
 	wait_text = psychopy.visual.TextStim( win = win,
@@ -52,6 +54,7 @@ def run( subj_id, run_num, show_perf = True ):
 	                                      pos = ( 0, -100 )
 	                                    )
 
+	map( lambda x : x.draw(), fix_stim )
 	wait_text.draw()
 	win.flip()
 
@@ -66,8 +69,8 @@ def run( subj_id, run_num, show_perf = True ):
 	stim = update_stim( conf, stim, img, masks, img_trials[ :, 0 ] )
 	stim_updated[ 0 ] = True
 
-	fix_stim = ns_patches.exp.loc.get_fixation( win, conf )
 
+	map( lambda x : x.draw(), fix_stim )
 	wait_str = "Press a button when ready for the run"
 	wait_text.setText( wait_str )
 	wait_text.draw()
@@ -75,6 +78,7 @@ def run( subj_id, run_num, show_perf = True ):
 
 	keys = psychopy.event.waitKeys()
 
+	map( lambda x : x.draw(), fix_stim )
 	wait_str = "Awaiting trigger..."
 	wait_text.setText( wait_str )
 	wait_text.draw()
@@ -145,7 +149,7 @@ def update_stim( conf, stim, img, masks, img_seq ):
 
 		i_img = img_seq[ i_patch ]
 
-		new_img += img[ i_img, ... ] * masks[ i_patch, ... ]
+		new_img += img[ i_img, ... ] * ( masks[ i_patch, ... ] > 0 )
 
 	stim.setImage( new_img )
 
@@ -156,7 +160,7 @@ def gen_stim( conf, win, masks ):
 
 	img_size = [ conf.stim.img_diam_pix ] * 2
 
-	img_mask = ( np.sum( masks, axis = 0 ) > 0.5 ) * 2.0 - 1.0
+	img_mask = np.sum( masks, axis = 0 ) * 2.0 - 1.0
 
 	stim = psychopy.visual.ImageStim( win = win,
 	                                  image = np.ones( img_size ),

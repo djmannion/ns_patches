@@ -112,7 +112,7 @@ def img_browser( skip_discarded = True,
 		coh_img = ns_patches.stimulus.load_img( img_path )
 
 		for i_coh_patch in coh_patches:
-			new_img += coh_img * masks[ i_coh_patch, ... ]
+			new_img += coh_img * ( masks[ i_coh_patch, ... ] > 0 )
 
 		# now set the incoherent patches
 		for i_incoh_patch in incoh_patches:
@@ -126,7 +126,7 @@ def img_browser( skip_discarded = True,
 
 			incoh_img = ns_patches.stimulus.load_img( incoh_path )
 
-			new_img += incoh_img * masks[ i_incoh_patch, ... ]
+			new_img += incoh_img * ( masks[ i_incoh_patch, ... ] > 0 )
 
 		stim.setImage( new_img )
 
