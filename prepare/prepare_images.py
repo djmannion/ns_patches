@@ -7,6 +7,7 @@ import psychopy.filters
 import stimuli.utils, stimuli.upenn_db
 
 import ns_patches.config, ns_patches.paths, ns_patches.stimulus
+import ns_patches.exp.exp
 
 
 def img_browser( skip_discarded = True,
@@ -41,7 +42,7 @@ def img_browser( skip_discarded = True,
 	                              units = "pix"
 	                            )
 
-	stim = set_stim( conf, win )
+	fix_stim = ns_patches.stimulus.get_fixation( win, conf )
 
 	status = psychopy.visual.TextStim( win = win,
 	                                   text = "placeholder",
@@ -72,6 +73,9 @@ def img_browser( skip_discarded = True,
 	                                     n_trials = 80
 	                                   )
 
+	masks = ns_patches.exp.exp.gen_masks( conf )
+	stim = ns_patches.exp.exp.gen_stim( conf, win, masks )
+
 	change_image = False
 
 	i_trial = 0
@@ -97,6 +101,8 @@ def img_browser( skip_discarded = True,
 			else:
 				img_ok = True
 
+		new_img = np.zeros( [ conf.stim.img_diam_pix ] * 2 )
+
 		# first set the coherent patches
 		img_path = os.path.join( paths.img_db,
 		                         coh_img_info[ "album" ],
@@ -106,7 +112,7 @@ def img_browser( skip_discarded = True,
 		coh_img = ns_patches.stimulus.load_img( img_path )
 
 		for i_coh_patch in coh_patches:
-			stim[ i_coh_patch ].update_image( coh_img )
+			new_img += coh_img * masks[ i_coh_patch, ... ]
 
 		# now set the incoherent patches
 		for i_incoh_patch in incoh_patches:
@@ -118,14 +124,18 @@ def img_browser( skip_discarded = True,
 			                           img_db_info[ i_incoh_img ][ "image" ]
 			                         )
 
-			stim[ i_incoh_patch ].update_image( incoh_path )
+			incoh_img = ns_patches.stimulus.load_img( incoh_path )
+
+			new_img += incoh_img * masks[ i_incoh_patch, ... ]
+
+		stim.setImage( new_img )
 
 		change_image = False
 		mask_off = False
 
 		while not change_image:
 
-			map( lambda x : x.draw(), stim )
+			map( lambda x : x.draw(), fix_stim + [ stim ] )
 
 			stat_txt = [ "ID: {id:d}".format( id = coh_img_info[ "id" ] ),
 			             "Album: " + coh_img_info[ "album" ],
@@ -138,7 +148,6 @@ def img_browser( skip_discarded = True,
 			status.draw()
 
 			win.flip()
-
 
 			keys = psychopy.event.waitKeys()
 
@@ -167,21 +176,14 @@ def img_browser( skip_discarded = True,
 
 				elif key == "m":
 					if not mask_off:
-						temp_mask = stim[ coh_patches[ -1 ] ]._mask.copy()
-						stim[ coh_patches[ -1 ] ].update_mask( None )
+						temp_mask = stim._maskName.copy()
+						stim.setImage( coh_img )
+						stim.setMask( np.ones( coh_img.shape ) )
 						mask_off = True
 					else:
-						stim[ coh_patches[ -1 ] ].update_mask( temp_mask )
+						stim.setImage( new_img )
+						stim.setMask( temp_mask )
 						mask_off = False
-
-
-
-#					if n_active == 0:
-#						stim.enable_mask()
-#						n_active = conf.stim.n_patches
-#					else:
-#						stim.disable_mask()
-#						n_active = 0
 
 				if change_image == True:
 					i_trial = np.mod( i_trial + 1, 80 )
@@ -192,24 +194,6 @@ def img_browser( skip_discarded = True,
 		save_img_db_info( img_db_file = paths.img_db_info,
 		                  img_db_info = img_db_info
 		                )
-
-
-def set_stim( conf, win ):
-
-	stim = []
-
-	for patch_info in conf.stim.patches:
-
-		mask = ns_patches.stimulus.make_mask( patch_info, conf.stim.img_diam_pix )
-
-		stim.append( ns_patches.stimulus.Stimulus( win = win,
-		                                           img = np.ones( mask.shape ),
-		                                           mask = mask
-		                                         )
-		           )
-
-	return stim
-
 
 
 def read_img_db_info( img_db_file ):
