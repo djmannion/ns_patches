@@ -17,9 +17,9 @@ def get_conf( subj_id = None ):
 
 	conf = ConfigContainer()
 
-	conf.exp = _get_exp_conf()
 	conf.stim = _get_stim_conf()
 	conf.acq = _get_acq_conf()
+	conf.exp = _get_exp_conf( conf )
 	conf.loc = _get_loc_conf( conf )
 	conf.ana = _get_ana_conf()
 	conf.all_subj = _get_subj_conf()
@@ -30,7 +30,7 @@ def get_conf( subj_id = None ):
 	return conf
 
 
-def _get_exp_conf():
+def _get_exp_conf( conf ):
 
 	exp_conf = ConfigContainer()
 
@@ -52,6 +52,25 @@ def _get_exp_conf():
 	exp_conf.n_img_incoh_per_run = 2
 
 	exp_conf.n_trials = exp_conf.n_img * exp_conf.n_img_rep_per_run
+
+	exp_conf.n_null = exp_conf.n_trials / 4
+
+	exp_conf.n_seq = exp_conf.n_trials + exp_conf.n_null
+
+	exp_conf.n_pre = 8
+
+	exp_conf.n_run_seq = exp_conf.n_seq + exp_conf.n_pre
+
+	exp_conf.bin_len_s = 4
+
+	exp_conf.n_vol = ( ( exp_conf.n_seq + exp_conf.n_pre ) *
+	                   exp_conf.bin_len_s /
+	                   conf.acq.tr_s
+	                 )
+
+	exp_conf.run_len_s = exp_conf.n_vol * conf.acq.tr_s
+
+	exp_conf.img_on_s = 2.0
 
 	return exp_conf
 
