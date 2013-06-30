@@ -1,7 +1,7 @@
 import os.path
-import csv
 
 import numpy as np
+import scipy.stats
 
 import psychopy.visual, psychopy.misc, psychopy.event, psychopy.core
 
@@ -17,6 +17,9 @@ def run( subj_id, run_num, show_perf = True ):
 	conf = ns_patches.config.get_conf()
 
 	paths = ns_patches.paths.get_exp_paths( conf )
+
+	# get the paths for the relevant output, making sure they don't exist already
+	log_path = get_log_path( subj_id, run_num, paths )
 
 	# this is an ( n_patches, n_trials ) array that contains the image info for
 	# each patch and trial
@@ -36,13 +39,16 @@ def run( subj_id, run_num, show_perf = True ):
 
 	assert img_trials.shape[ 1 ] == len( seq )
 
+	resp_status = np.empty( len( seq ) )
+	resp_status.fill( np.NAN )
+
 	win = psychopy.visual.Window( ( 1024, 768 ),
 	                              monitor = "UMN_7T",
 	                              fullscr = False,
 	                              allowGUI = True
 	                            )
 
-	fix_stim = ns_patches.exp.loc.get_fixation( win, conf )
+	fix_stim = ns_patches.stimulus.get_fixation( win, conf )
 
 	wait_str = "Loading stimuli..."
 
@@ -58,7 +64,8 @@ def run( subj_id, run_num, show_perf = True ):
 	wait_text.draw()
 	win.flip()
 
-	img = load_images( conf, paths )
+	img_db = load_img_info( conf, paths )
+	img = load_images( conf, paths, img_db )
 	masks = gen_masks( conf )
 	stim = gen_stim( conf, win, masks )
 
@@ -68,7 +75,6 @@ def run( subj_id, run_num, show_perf = True ):
 	# prep for first trial
 	stim = update_stim( conf, stim, img, masks, img_trials[ :, 0 ] )
 	stim_updated[ 0 ] = True
-
 
 	map( lambda x : x.draw(), fix_stim )
 	wait_str = "Press a button when ready for the run"
@@ -84,10 +90,13 @@ def run( subj_id, run_num, show_perf = True ):
 	wait_text.draw()
 	win.flip()
 
+	wait_text.setPos( [ 0, -300 ] )
+
 	run_clock = psychopy.core.Clock()
 
 	quit_key = "q"
 	trig_key = "t"
+	resp_keys = [ "b", "r" ]
 
 	keys = psychopy.event.waitKeys( keyList = [ quit_key, trig_key ] )
 
@@ -102,7 +111,7 @@ def run( subj_id, run_num, show_perf = True ):
 
 	while run_time < conf.exp.run_len_s:
 
-		if seq[ 0 ] > 0 and run_time < conf.exp.bin_len_s:
+		if run_time < seq[ 0 ]:
 			delta_t = np.Inf
 		else:
 			i_seq = np.where( run_time >= seq )[ 0 ][ -1 ]
@@ -115,19 +124,24 @@ def run( subj_id, run_num, show_perf = True ):
 			win.flip()
 			stim_drawn[ i_seq ] = True
 
-			win.getMovieFrame()
-			win.saveMovieFrames( "caps/cap{t:02d}.png".format( t = i_seq ) )
 
-			if i_seq < ( len( seq ) - 2 ):
+			psychopy.event.clearEvents()
+
+			# find the index of the coherent image currently being shown
+			i_img = int( scipy.stats.mode( img_trials[ :, i_seq ] )[ 0 ] )
+			img_album = img_db[ i_img ][ "album" ]
+
+#			win.getMovieFrame()
+#			win.saveMovieFrames( "caps/cap{t:02d}.png".format( t = i_seq ) )
+
+			if i_seq < ( len( seq ) - 1 ):
 				stim = update_stim( conf, stim, img, masks, img_trials[ :, i_seq + 1 ] )
+				stim_updated[ i_seq + 1 ] = True
 
 		if ( conf.exp.img_on_s < delta_t < conf.exp.bin_len_s ):
-			map( lambda x : x.draw(), fix_stim )
-
-			win.flip()
 
 			# look for a keypress
-			keys = psychopy.event.getKeys()
+			keys = psychopy.event.getKeys( keyList = resp_keys + [ quit_key ] )
 
 			for key in keys:
 
@@ -136,9 +150,50 @@ def run( subj_id, run_num, show_perf = True ):
 					win.close()
 					return 1
 
+				else:
+
+					if img_album == "Flowers":
+						if key == "r":
+							corr = 1
+						else:
+							corr = 0
+					else:
+						if key == "b":
+							corr = 1
+						else:
+							corr = 0
+
+					resp_status[ i_seq ] = corr
+
+			wait_text.setText( "test" + str( resp_status[ i_seq ] ) )
+
+			map( lambda x : x.draw(), fix_stim )
+
+			wait_text.draw()
+
+			win.flip()
+
 		run_time = run_clock.getTime()
 
 	win.close()
+
+	assert np.all( np.array( stim_drawn ) == True )
+	assert np.all( np.array( stim_updated ) == True )
+
+
+def get_log_path( subj_id, run_num, paths, err_if_exist = True ):
+
+	log_file = "{s:s}_ns_patches-run_{r:d}_log.npz".format( s = subj_id,
+	                                                        r = run_num,
+	                                                      )
+
+	log_path = os.path.join( paths.log_dir, log_file )
+
+	if os.path.exists( log_path ):
+		raise IOError( "Output path " + log_path + " already exists" )
+
+	return log_path
+
 
 
 def update_stim( conf, stim, img, masks, img_seq ):
@@ -193,7 +248,7 @@ def gen_masks( conf ):
 	return masks
 
 
-def load_images( conf, paths ):
+def load_img_info( conf, paths ):
 
 	img_db_info = ns_patches.prepare.prepare_images.read_img_db_info( paths.img_db_info )
 
@@ -203,6 +258,11 @@ def load_images( conf, paths ):
 
 #	assert len( img_db ) == conf.exp.n_img
 	img_db = img_db[ :conf.exp.n_img ]
+
+	return img_db
+
+
+def load_images( conf, paths, img_db ):
 
 	img = np.empty( ( conf.exp.n_img,
 	                  conf.stim.img_diam_pix,
