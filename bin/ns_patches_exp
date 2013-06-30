@@ -1,0 +1,71 @@
+#! /usr/bin/python2
+# ^ want to run it with optimisations turned on
+
+"""Parses the command-line input and executes multiple runs of the NS patches
+fMRI experiment.
+"""
+
+import sys
+import argparse
+
+import numpy as np
+
+import ns_patches.exp.exp
+
+desc = "Executes the NS patches fMRI experiment"
+
+eg = """
+
+Example usage:
+
+  run subject through all runs:
+    ns_patch_exp s1021
+
+  run subject through runs 3 to the end
+    ns_patch_exp s1021 --start=3
+
+  run subject only on run 2
+    ns_patch_exp s1021 --start=1 --end=1
+
+"""
+
+# use this formatter so we can supply our own indentation
+fmt = argparse.RawDescriptionHelpFormatter
+
+parser = argparse.ArgumentParser( description = desc,
+                                  epilog = eg,
+                                  formatter_class = fmt,
+                                )
+
+parser.add_argument( "subj_id",
+                     help = "Subject ID"
+                   )
+
+parser.add_argument( "--start",
+                     type = int,
+                     help = "Start run",
+                     default = 1
+                   )
+
+parser.add_argument( "--end",
+                     help = "End run",
+                     type = int,
+                     default = 12
+                   )
+
+args = parser.parse_args()
+
+if len( args.subj_id ) != 5 or args.subj_id[ 0 ] != "s":
+	raise ValueError( "Subject ID needs to be in the format of sXXXX" )
+
+for run_num in np.arange( args.start, args.end + 1 ):
+
+	print "Executing: ns_patches.exp.exp.run( {s:s}, {n:d} )".format( s = args.subj_id,
+	                                                                  n = run_num
+	                                                                )
+
+	exit_status = ns_patches.exp.exp.run( args.subj_id, run_num )
+
+	if exit_status == 1:
+		print "Aborting sequence"
+		sys.exit( exit_status )
