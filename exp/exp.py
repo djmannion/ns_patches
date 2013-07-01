@@ -8,7 +8,7 @@ import psychopy.visual, psychopy.misc, psychopy.event, psychopy.core
 import ns_patches.config, ns_patches.paths, ns_patches.prepare.prepare_images
 import ns_patches.exp.loc
 
-def run( subj_id, run_num, show_perf = True ):
+def run( subj_id, run_num, show_perf = True, mon_name = "UMN_7T" ):
 
 	# no matter what, can't show performance if its the first run
 	if run_num == 1:
@@ -43,9 +43,9 @@ def run( subj_id, run_num, show_perf = True ):
 	resp_status.fill( np.NAN )
 
 	win = psychopy.visual.Window( ( 1024, 768 ),
-	                              monitor = "UMN_7T",
-	                              fullscr = False,
-	                              allowGUI = True
+	                              monitor = mon_name,
+	                              fullscr = True,
+	                              allowGUI = False
 	                            )
 
 	fix_stim = ns_patches.stimulus.get_fixation( win, conf )
