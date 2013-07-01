@@ -53,6 +53,12 @@ parser.add_argument( "--end",
                      default = 12
                    )
 
+parser.add_argument( "--monitor",
+                     help = "Monitor name",
+                     type = str,
+                     default = "UMN_7T"
+                   )
+
 args = parser.parse_args()
 
 if len( args.subj_id ) != 5 or args.subj_id[ 0 ] != "s":
@@ -64,7 +70,8 @@ for run_num in np.arange( args.start, args.end + 1 ):
 	                                                                  n = run_num
 	                                                                )
 
-	exit_status = ns_patches.exp.exp.run( args.subj_id, run_num )
+	exit_status = ns_patches.exp.exp.run( args.subj_id, run_num, mon_name =
+args.monitor )
 
 	if exit_status == 1:
 		print "Aborting sequence"
