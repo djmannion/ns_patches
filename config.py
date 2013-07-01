@@ -211,144 +211,42 @@ def _get_stim_conf():
 
 def _get_subj_conf( subj_id = None ):
 
-	s1000_loc_pilot = ConfigContainer()
+	s1000 = ConfigContainer()
 
-	s1000_loc_pilot.subj_id = "s1000_loc_pilot"
-	s1000_loc_pilot.acq_date = "20130620"
-	s1000_loc_pilot.comments = ""
-	s1000_loc_pilot.n_runs = 6
-	s1000_loc_pilot.n_exp_runs = 0
-	s1000_loc_pilot.n_loc_runs = 6
-	s1000_loc_pilot.exp_runs = [ ]
-	s1000_loc_pilot.loc_runs = range( 1, 7 )
-	s1000_loc_pilot.n_fmaps = 1
-	s1000_loc_pilot.mot_base = 4
+	s1000.subj_id = "s1000"
+	s1000.subj_id_loc = "s1000_loc"
+	s1000.acq_date = ""
+	s1000.acq_date_loc = "20130620"
+	s1000.comments = ""
+	s1000.n_runs = 12
+	s1000.n_loc_runs = 6
+	s1000.mot_base = 7
+	s1000.mot_base_loc = 4
 
-	s1000_loc_pilot.extra_al_params = [ "-parang", "1", "-13", "-3",
-	                                    "-parang", "2", "16", "26",
-	                                    "-parang", "3", "6", "16",
-	                                    "-maxrot", "10",
-	                                    "-source_automask+2",
-	                                    "-nocmass"
-	                                  ]
+	s1000.extra_al_params = [ "-parang", "1", "-13", "-3",
+	                          "-parang", "2", "16", "26",
+	                          "-parang", "3", "6", "16",
+	                          "-maxrot", "10",
+	                          "-source_automask+2",
+	                          "-nocmass"
+	                        ]
 
+	s1000.extra_al_params_loc = [ "-parang", "1", "-13", "-3",
+	                              "-parang", "2", "16", "26",
+	                              "-parang", "3", "6", "16",
+	                              "-maxrot", "10",
+	                              "-source_automask+2",
+	                              "-nocmass"
+	                            ]
 
-	s1000_loc_pilot.node_k = { "lh" : 130318,
-	                           "rh" : 131151
-	                         }
-
-	s1000_loc_pilot_2runs = ConfigContainer()
-
-	s1000_loc_pilot_2runs.subj_id = "s1000_loc_pilot_2runs"
-	s1000_loc_pilot_2runs.acq_date = "20130620"
-	s1000_loc_pilot_2runs.comments = ""
-	s1000_loc_pilot_2runs.n_runs = 2
-	s1000_loc_pilot_2runs.n_exp_runs = 0
-	s1000_loc_pilot_2runs.n_loc_runs = 2
-	s1000_loc_pilot_2runs.exp_runs = [ ]
-	s1000_loc_pilot_2runs.loc_runs = range( 1, 3 )
-	s1000_loc_pilot_2runs.n_fmaps = 1
-	s1000_loc_pilot_2runs.mot_base = 2
-
-	s1000_loc_pilot_2runs.extra_al_params = [ "-parang", "1", "-13", "-3",
-	                                          "-parang", "2", "16", "26",
-	                                          "-parang", "3", "6", "16",
-	                                          "-maxrot", "10",
-	                                          "-source_automask+2",
-	                                          "-nocmass"
-	                                        ]
-
-
-	s1000_loc_pilot_2runs.node_k = { "lh" : 130318,
-	                                 "rh" : 131151
-	                               }
-
-	s1000_loc_pilot_3runs = ConfigContainer()
-
-	s1000_loc_pilot_3runs.subj_id = "s1000_loc_pilot_3runs"
-	s1000_loc_pilot_3runs.acq_date = "20130620"
-	s1000_loc_pilot_3runs.comments = ""
-	s1000_loc_pilot_3runs.n_runs = 3
-	s1000_loc_pilot_3runs.n_exp_runs = 0
-	s1000_loc_pilot_3runs.n_loc_runs = 3
-	s1000_loc_pilot_3runs.exp_runs = [ ]
-	s1000_loc_pilot_3runs.loc_runs = range( 1, 4 )
-	s1000_loc_pilot_3runs.n_fmaps = 1
-	s1000_loc_pilot_3runs.mot_base = 3
-
-	s1000_loc_pilot_3runs.extra_al_params = [ "-parang", "1", "-13", "-3",
-	                                          "-parang", "2", "16", "26",
-	                                          "-parang", "3", "6", "16",
-	                                          "-maxrot", "10",
-	                                          "-source_automask+2",
-	                                          "-nocmass"
-	                                        ]
-
-
-	s1000_loc_pilot_3runs.node_k = { "lh" : 130318,
-	                                 "rh" : 131151
-	                               }
-
-	s1000_loc_pilot_4runs = ConfigContainer()
-
-	s1000_loc_pilot_4runs.subj_id = "s1000_loc_pilot_4runs"
-	s1000_loc_pilot_4runs.acq_date = "20130620"
-	s1000_loc_pilot_4runs.comments = ""
-	s1000_loc_pilot_4runs.n_runs = 4
-	s1000_loc_pilot_4runs.n_exp_runs = 0
-	s1000_loc_pilot_4runs.n_loc_runs = 4
-	s1000_loc_pilot_4runs.exp_runs = [ ]
-	s1000_loc_pilot_4runs.loc_runs = range( 1, 5 )
-	s1000_loc_pilot_4runs.n_fmaps = 1
-	s1000_loc_pilot_4runs.mot_base = 4
-
-	s1000_loc_pilot_4runs.extra_al_params = [ "-parang", "1", "-13", "-3",
-	                                          "-parang", "2", "16", "26",
-	                                          "-parang", "3", "6", "16",
-	                                          "-maxrot", "10",
-	                                          "-source_automask+2",
-	                                          "-nocmass"
-	                                        ]
-
-
-	s1000_loc_pilot_4runs.node_k = { "lh" : 130318,
-	                                 "rh" : 131151
-	                               }
-
-	s1000_loc_pilot_5runs = ConfigContainer()
-
-	s1000_loc_pilot_5runs.subj_id = "s1000_loc_pilot_5runs"
-	s1000_loc_pilot_5runs.acq_date = "20130620"
-	s1000_loc_pilot_5runs.comments = ""
-	s1000_loc_pilot_5runs.n_runs = 5
-	s1000_loc_pilot_5runs.n_exp_runs = 0
-	s1000_loc_pilot_5runs.n_loc_runs = 5
-	s1000_loc_pilot_5runs.exp_runs = [ ]
-	s1000_loc_pilot_5runs.loc_runs = range( 1, 6 )
-	s1000_loc_pilot_5runs.n_fmaps = 1
-	s1000_loc_pilot_5runs.mot_base = 4
-
-	s1000_loc_pilot_5runs.extra_al_params = [ "-parang", "1", "-13", "-3",
-	                                          "-parang", "2", "16", "26",
-	                                          "-parang", "3", "6", "16",
-	                                          "-maxrot", "10",
-	                                          "-source_automask+2",
-	                                          "-nocmass"
-	                                        ]
-
-
-	s1000_loc_pilot_5runs.node_k = { "lh" : 130318,
-	                                 "rh" : 131151
-	                               }
+	s1000.node_k = { "lh" : 130318,
+	                 "rh" : 131151
+	               }
 
 
 	subj = ConfigContainer()
 
-	subj.subj = { "s1000_loc_pilot" : s1000_loc_pilot,
-	              "s1000_loc_pilot_2runs" : s1000_loc_pilot_2runs,
-	              "s1000_loc_pilot_3runs" : s1000_loc_pilot_3runs,
-	              "s1000_loc_pilot_4runs" : s1000_loc_pilot_4runs,
-	              "s1000_loc_pilot_5runs" : s1000_loc_pilot_5runs,
+	subj.subj = { "s1000" : s1000,
 	            }
 
 	if subj_id is None:
