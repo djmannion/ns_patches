@@ -1,6 +1,6 @@
 # id	album	image	status
 0	Flowers	merry_mexico0097.tif	N
-1	Flowers	pippin0164.tif	N
+1	Flowers	pippin0164.tif	Y
 2	Flowers	merry0192.tif	N
 3	Flowers	merry_flor0006.tif	Y
 4	Flowers	merry0059.tif	N
@@ -17,7 +17,7 @@
 15	Flowers	pippin0258.tif	N
 16	Flowers	pippin0211.tif	N
 17	Flowers	pippin_park0056.tif	N
-18	Flowers	merry_flor0009.tif	Y
+18	Flowers	merry_flor0009.tif	N
 19	Flowers	pippin_jtalon0023.tif	N
 20	Flowers	pippin_Mex07_019.tif	N
 21	Flowers	merry_mexico0229.tif	N
