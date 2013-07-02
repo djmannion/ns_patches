@@ -11,9 +11,10 @@ import ns_patches.exp.exp
 
 
 def img_browser( skip_discarded = True,
-                 save_changes = True,
+                 save_changes = False,
                  seek_to_first_A = False,
-                 seek_to_id = None
+                 seek_to_id = None,
+                 mon_name = "UMN_7T"
                ):
 	"""Interface to browse through and select from the image database.
 
@@ -36,9 +37,9 @@ def img_browser( skip_discarded = True,
 	img_db_info = read_img_db_info( paths.img_db_info )
 
 	win = psychopy.visual.Window( ( 1024, 768 ),
-	                              fullscr = False,
-	                              allowGUI = True,
-	                              monitor = conf.acq.test_monitor_name,
+	                              fullscr = True,
+	                              allowGUI = False,
+	                              monitor = mon_name,
 	                              units = "pix"
 	                            )
 
@@ -163,7 +164,7 @@ def img_browser( skip_discarded = True,
 					i_img -= 1
 					change_image = True
 
-				elif key == "space":
+				elif key in [ "space", "r" ]:
 					img_db_info[ i_img ] = coh_img_info
 					i_img += 1
 					change_image = True
@@ -174,7 +175,7 @@ def img_browser( skip_discarded = True,
 				elif key == "n":
 					coh_img_info[ "status" ] = "N"
 
-				elif key == "m":
+				elif key in [ "m", "b" ]:
 					if not mask_off:
 						temp_mask = stim._maskName.copy()
 						stim.setImage( coh_img )

@@ -70,7 +70,7 @@ def run( subj_id, run_num, show_perf = True, mon_name = "UMN_7T" ):
 	                                      height = 22,
 	                                      units = "pix",
 	                                      bold = False,
-	                                      pos = ( 0, -200 )
+	                                      pos = ( 0, -150 )
 	                                    )
 
 	fix_stim = ns_patches.stimulus.get_fixation( win, conf )
@@ -118,7 +118,7 @@ def run( subj_id, run_num, show_perf = True, mon_name = "UMN_7T" ):
 	perf_text.draw()
 	win.flip()
 
-	wait_text.setPos( [ 0, -300 ] )
+	wait_text.setPos( [ 0, -350 ] )
 
 	run_clock = psychopy.core.Clock()
 
