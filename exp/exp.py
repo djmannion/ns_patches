@@ -61,8 +61,8 @@ def run( subj_id, run_num, show_perf = True, mon_name = "UMN_7T" ):
 
 	win = psychopy.visual.Window( ( 1024, 768 ),
 	                              monitor = mon_name,
-	                              fullscr = True,
-	                              allowGUI = False
+	                              fullscr = False,
+	                              allowGUI = True
 	                            )
 
 	perf_text = psychopy.visual.TextStim( win = win,
@@ -169,8 +169,8 @@ def run( subj_id, run_num, show_perf = True, mon_name = "UMN_7T" ):
 			i_img = int( scipy.stats.mode( img_trials[ :, i_seq ] )[ 0 ] )
 			img_album = img_db[ i_img ][ "album" ]
 
-#			win.getMovieFrame()
-#			win.saveMovieFrames( "caps/cap{t:02d}.png".format( t = i_seq ) )
+			win.getMovieFrame()
+			win.saveMovieFrames( "caps/cap{t:02d}.png".format( t = i_seq ) )
 
 			# take this time to update our next stimulus
 			if i_seq < ( len( seq ) - 1 ):
