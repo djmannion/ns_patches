@@ -60,9 +60,14 @@ def _get_exp_conf( conf ):
 
 	exp_conf.n_pre = 8
 
+	exp_conf.bin_len_s = 4
+
 	exp_conf.n_run_seq = exp_conf.n_seq + exp_conf.n_pre
 
-	exp_conf.bin_len_s = 4
+	exp_conf.n_censor_vols = ( exp_conf.n_pre *
+	                           exp_conf.bin_len_s /
+	                           conf.acq.tr_s
+	                         )
 
 	exp_conf.n_vol = ( ( exp_conf.n_seq + exp_conf.n_pre ) *
 	                   exp_conf.bin_len_s /
@@ -373,7 +378,9 @@ def gen_exp_patch_timing( conf ):
 
 		patch_order = np.random.permutation( conf.exp.n_mod_patches )
 
-		i_design = np.arange( 4 ) + i_img * 4
+		i_design = ( np.arange( conf.exp.n_img_rep_per_run  ) +
+		             i_img * conf.exp.n_img_rep_per_run
+		           )
 
 		# temporarily have images be one-based for multiplication purposes
 		base_design[ i_design, : ] = ( i_img + 1 ) * rows[ :, patch_order ]
@@ -384,13 +391,15 @@ def gen_exp_patch_timing( conf ):
 
 	success = False
 
-	na = np.repeat( np.arange( conf.exp.n_img ), 2 )
+	na = np.repeat( np.arange( conf.exp.n_img ), conf.exp.n_img_rep_per_run / 2 )
 
 	while not success:
 
 		design = base_design.copy()
 
-		extras = np.tile( np.arange( conf.exp.n_img ), 2 )
+		extras = np.tile( np.arange( conf.exp.n_img ),
+		                  conf.exp.n_img_rep_per_run / 2
+		                )
 
 		for i_patch in xrange( conf.exp.n_mod_patches ):
 
@@ -433,338 +442,3 @@ def gen_exp_patch_timing( conf ):
 	             )
 
 	return design
-
-
-def gen_exp_patch_timing( conf ):
-
-	rows = np.zeros( ( 4, conf.exp.n_mod_patches )  )
-	rows[ 0, :conf.exp.n_incoh_patches ] = 1
-	rows[ 1, conf.exp.n_incoh_patches: ] = 1
-	rows[ 2, np.arange( 0, conf.exp.n_mod_patches, 2 ) ] = 1
-	rows[ 3, np.arange( 1, conf.exp.n_mod_patches, 2 ) ] = 1
-
-	design = np.zeros( ( conf.exp.n_trials, conf.exp.n_mod_patches ) )
-
-	for i_img in xrange( conf.exp.n_img ):
-
-		patch_order = np.random.permutation( conf.exp.n_mod_patches )
-
-		i_design = np.arange( 4 ) + i_img * 4
-
-		design_unfulfilled[ i_design, : ] = i_img *  rows[ :, patch_order ]
-
-	oops = True
-
-	while oops:
-
-		design = design_unfulfilled.copy()
-
-		extras = np.tile( np.arange( 20 )[ :, np.newaxis ], ( 1, 2 ) )
-
-		for i_patch in xrange( conf.exp.n_mod_patches ):
-
-			design[ blanks, i_patch ] = extras[ np.random.permutation( len( extras ) ) ]
-
-		for i_img in xrange( 20 ):
-			for i_r in xrange( 4 ):
-				row = i_img * 4 + i_r
-
-	return rows
-
-
-def gen_exp_patch_timing_old( conf ):
-	"""Generates the image timing patterns for each patch.
-
-	Paramters
-	---------
-	conf : ns_patches.config.get_conf() object
-		Configuration info
-
-	Returns
-	-------
-	trials : numpy array of ints, ( n_patches, n_trials )
-		Each entry contains the image index for each patch and trial
-
-	"""
-
-	# generate a vector with the image indices repeated the number of repetitions
-	img_seq = np.repeat( np.arange( conf.exp.n_img ),
-	                     conf.exp.n_img_rep_per_run
-	                   )
-
-	# and shake them up
-	np.random.shuffle( img_seq )
-
-	# propogate the sequence for each of the patches
-	trials = np.tile( img_seq, ( conf.stim.n_patches, 1 ) )
-
-	# just check its how we think it is
-	assert trials.shape == ( conf.stim.n_patches,
-	                         conf.exp.n_img * conf.exp.n_img_rep_per_run
-	                       )
-
-	# calculate the sequence of incoherent patches per trial
-	trial_incoh = sel_incoh( conf.exp.n_mod_patches,
-	                         conf.exp.n_incoh_patches,
-	                         conf.exp.n_trials
-	                       )
-
-
-	# we only need to consider the patches that will be modified; the others
-	# already have their image set
-	for i_incoh_patch in xrange( conf.exp.n_mod_patches ):
-
-		# find out which patch, overall, this mod patch corresponds to
-		i_patch = conf.exp.mod_patches[ i_incoh_patch ]
-
-		# find the trials where this patch is designated as incoherent
-		( _, incoh_trials ) = np.where( trial_incoh == i_incoh_patch )
-
-		# when we do the shuffling of the incoherent events, we want to avoid
-		# replacing an image with the same image, by chance. so we might need to
-		# iterate a few times
-		success = False
-		while not success:
-
-			# get the image sequence for this patch and its incoherent trials
-			base_seq = trials[ i_patch, incoh_trials ]
-
-			# generate a shuffled image sequence for the incoherent trials
-			perm_seq = base_seq[ np.random.permutation( len( base_seq ) ) ]
-
-			# test whether the shuffled sequence has replaced an image with the same
-			# image - no good
-			diff_img = ( base_seq - perm_seq ) != 0
-
-			if np.all( diff_img ):
-
-				success = True
-
-				trials[ i_patch, incoh_trials ] = perm_seq
-
-	return trials
-
-
-def test_sel2( n_patch, n_incoh, n_trials, n_img ):
-
-	t = np.repeat( np.arange( n_img ), n_trials / n_img )
-
-	t = np.tile( t, ( n_patch, 1 ) )
-
-	success = False
-
-	while not success:
-
-		restart = False
-
-		swapped = np.zeros( ( n_patch,  n_trials ) )
-		swap_k = np.zeros( ( n_patch ) )
-
-		n = 0
-
-		while n < t.shape[ 1 ]:
-
-			p = ( 1 - swap_k / 2.0 )
-
-			p /= p.sum()
-
-			try:
-				s = np.random.choice( a = n_patch,
-				                      size = n_incoh,
-				                      replace = False,  # without replacement
-				                      p = p
-				                    )
-			except ValueError:
-				restart = True
-				break
-
-			for ( i_s, cs ) in enumerate( s ):
-
-				p = ( 1 - np.double( swapped[ cs, : ] ) )
-				p /= p.sum()
-
-				try:
-					c = np.random.choice( a = n_trials,
-					                      size = 1,
-					                      replace = False,  # without replacement
-					                      p = p
-					                    )
-				except ValueError:
-					restart = True
-					break
-
-				temp_1 = t[ cs, n ].copy()
-				temp_2 = t[ cs, c ].copy()
-
-				t[ cs, n ] = temp_2
-				t[ cs, c ] = temp_1
-
-				swapped[ cs, n ] = True
-				swapped[ cs, c ] = True
-
-				swap_k[ cs ] += 1
-
-			n += 1
-
-
-		if restart is not True:
-			success = True
-
-
-	return t
-
-
-
-
-
-
-def test_sel( n_patch, n_incoh, n_trials, n_img ):
-
-	success = False
-
-	i = np.empty( ( n_patch, n_trials ) )
-
-	while not success:
-
-		img_k = np.zeros( ( n_img ) )
-		patch_k = np.zeros( ( n_patch, n_img ) )
-
-		restart = False
-
-		for i_trial in xrange( n_trials ):
-
-			for i_patch in xrange( n_patch ):
-
-				p = 1 - ( img_k / 4.0 )
-				p += 1 - ( np.sum( patch_k, axis= 0 ) / float( n_incoh ) )
-
-				p[ p < 0 ] = 0.0
-
-				p /= p.sum()
-
-#				p[ np.isnan( p ) ] = 0.0
-
-#				p = 1.0 - p
-
-#				p /= p.sum()
-
-				try:
-					sel = np.random.choice( a = n_img,
-					                        p = p
-					                      )
-				except ValueError:
-					restart = True
-					print p
-					print ( i_trial, i_patch )
-					break
-
-				img_k[ sel ] += 1
-				patch_k[ i_patch, sel ] += 1
-
-				i[ i_patch, i_trial ] = sel
-
-			if restart:
-				break
-
-		if not restart:
-			success = True
-
-	return i
-
-def sel_incoh( n_patch, n_incoh, n_trials, img_seq ):
-	"""Select the patches that will be incoherent in each trial.
-
-	Parameters
-	----------
-	n_patch : integer
-		Number of patches overall on a given trial
-	n_incoh : integer
-		Number of incoherent patches per trial
-	n_trials : integer
-		Total number of trials
-
-	Returns
-	-------
-	incoh : numpy array of integers, ( incoh_patch, trial )
-		Incoherent patch indices for each trial
-
-	"""
-
-	# allocate half the patches on each trial to be incoherent
-	total_incoh = n_trials / 2
-
-	# we may need to try a few times
-	success = False
-
-	while not success:
-
-		restart = False
-
-		# keep track of the number of incoherent events there has been in each
-		# patch
-		incoh_k = np.zeros( n_patch )
-
-		incoh_img = np.zeros( ( n_patch, len( np.unique( img_seq ) ) ) )
-
-		# initialise the container
-		incoh = np.empty( ( n_incoh, n_trials ) )
-		incoh.fill( np.NAN )
-
-		for i_trial in xrange( n_trials ):
-
-			trial_img = img_seq[ i_trial ]
-
-			# want to make the probabilty of assigning a given patch to be incoherent
-			# on this trial as proportional to a lack of assignment in previous
-			# trials
-			p = ( 1 - ( incoh_k / float( total_incoh ) ) )
-
-			p += ( 1 - ( incoh_img[ :, trial_img ] / 2.0 ) )
-
-			p /= p.sum()
-
-			# `choice` throws a ValueError if there aren't enough non-zero
-			# probability entries - meaning this sequence is a dud
-			try:
-				# choose a set of incoherent patches from a weighted sample of all
-				# patches
-				sel = np.random.choice( a = n_patch,
-				                        size = n_incoh,
-				                        replace = False,  # without replacement
-				                        p = p
-				                      )
-			except ValueError:
-				restart = True
-				print i_trial
-				break
-
-			# assign the chosen patches
-			incoh[ :, i_trial ] = sel
-
-			# increment the counters for the chosen patches
-			incoh_k[ sel ] += 1
-			incoh_img[ sel, trial_img ] += 1
-
-		# if we'd made it this far, and havent been asked to restart, then we have
-		# a good set
-		if not restart:
-			success = True
-
-	# ... but let's make sure
-	# 1. each patch should have half the number of trials assigned as incoherent
-	assert np.all( np.array( [ ( incoh == p ).sum() for p in xrange( n_patch ) ] )
-	               == total_incoh
-	             )
-
-	# 2. pretty similar to the above
-	assert np.all( np.histogram( incoh.flatten(), np.arange( n_patch + 1 ) )[ 0 ]
-	               == total_incoh
-	             )
-
-	# 3. number of unique patches on each trial should equal the number of
-	# incoherent patches
-	assert np.all( np.array( [ len( np.unique( c ) ) for c in incoh.T ] )
-	               == n_incoh
-	             )
-
-	return incoh
