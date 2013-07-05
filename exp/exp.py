@@ -40,7 +40,7 @@ def run( subj_id, run_num, show_perf = True, mon_name = "UMN_7T" ):
 
 	# this is an ( n_patches, n_trials ) array that contains the image info for
 	# each patch and trial
-	img_trials = ns_patches.config.gen_exp_patch_timing( conf )
+	img_trials = gen_patch_timing( conf )
 
 	# this is an `n_run_seq` long vector of onset times, in s
 	seq = gen_run_seq( conf )
@@ -61,8 +61,8 @@ def run( subj_id, run_num, show_perf = True, mon_name = "UMN_7T" ):
 
 	win = psychopy.visual.Window( ( 1024, 768 ),
 	                              monitor = mon_name,
-	                              fullscr = False,
-	                              allowGUI = True
+	                              fullscr = True,
+	                              allowGUI = False
 	                            )
 
 	perf_text = psychopy.visual.TextStim( win = win,
@@ -284,6 +284,31 @@ def update_stim( conf, stim, img, masks, img_seq ):
 	return stim
 
 
+def gen_patch_timing( conf ):
+
+	# this is 80 x 26
+	mod_design = ns_patches.config.gen_exp_patch_timing( conf )
+
+	i_mod_patches = conf.exp.mod_patches
+	i_unmod_patches = np.setdiff1d( range( conf.stim.n_patches ),
+	                                i_mod_patches
+	                              )
+
+	design = np.empty( ( conf.stim.n_patches, conf.exp.n_trials ) )
+	design.fill( np.NAN )
+
+	for i_trial in xrange( conf.exp.n_trials ):
+
+		mod_patches = mod_design[ i_trial, : ]
+
+		trial_coh = scipy.stats.mode( mod_patches )[ 0 ]
+
+		design[ i_unmod_patches, i_trial ] = trial_coh
+		design[ i_mod_patches, i_trial ] = mod_design[ i_trial, : ]
+
+	return design
+
+
 def gen_stim( conf, win, masks ):
 
 	img_size = [ conf.stim.img_diam_pix ] * 2
@@ -371,3 +396,25 @@ def gen_run_seq( conf ):
 	seq_s = np.where( seq != 0 )[ 0 ] * conf.exp.bin_len_s
 
 	return seq_s
+
+
+def check_run_seq( conf ):
+
+	seq = gen_run_seq( conf )
+
+	cmd = [ "3dDeconvolve",
+	        "-nodata",
+	        "{n:0f}".format( n = conf.exp.n_vol ),
+	        "{n:0f}".format( n = conf.acq.tr_s ),
+	        "-polort", "A",
+	        "-CENSORTR", "0-{n:0f}".format( n = conf.exp.n_censor_vols - 1 ),
+	        "-num_stimts", "1",
+	        "-local_times",
+	        "-stim_times_IM",
+	        "1",
+	        "'1D: " + " ".join( map( str, seq ) ) + "'",
+	        "'SPMG1(1)'"
+	      ]
+
+	print " ".join( cmd )
+
