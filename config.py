@@ -3,6 +3,7 @@ import os.path
 import csv
 
 import numpy as np
+import scipy.stats
 
 import psychopy.misc
 
@@ -345,6 +346,133 @@ def check_loc_timing( conf, run_timing ):
 
 
 def gen_exp_patch_timing( conf ):
+	"""Generates the image timing patterns for each patch.
+
+	Paramters
+	---------
+	conf : ns_patches.config.get_conf() object
+		Configuration info
+
+	Returns
+	-------
+	design : numpy array of ints, ( n_trials, n_patches )
+		Each entry contains the image index for each (modulated) patch and trial
+
+	"""
+
+	rows = np.array( [ [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+	                   [ 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1 ],
+	                   [ 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0 ],
+	                   [ 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1 ]
+	                 ]
+	               )
+
+	base_design = np.zeros( ( conf.exp.n_trials, conf.exp.n_mod_patches ) )
+
+	for i_img in xrange( conf.exp.n_img ):
+
+		patch_order = np.random.permutation( conf.exp.n_mod_patches )
+
+		i_design = np.arange( 4 ) + i_img * 4
+
+		# temporarily have images be one-based for multiplication purposes
+		base_design[ i_design, : ] = ( i_img + 1 ) * rows[ :, patch_order ]
+
+	# return to zero-based image indexing
+	# 'null' events are now -1
+	base_design -= 1
+
+	success = False
+
+	na = np.repeat( np.arange( conf.exp.n_img ), 2 )
+
+	while not success:
+
+		design = base_design.copy()
+
+		extras = np.tile( np.arange( conf.exp.n_img ), 2 )
+
+		for i_patch in xrange( conf.exp.n_mod_patches ):
+
+			i_blanks = np.where( design[ :, i_patch ] < 0 )[ 0 ]
+
+			good = False
+
+			while not good:
+
+				i_extras = np.random.permutation( len( extras ) )
+
+				fillers = extras[ i_extras ]
+
+				good = np.all( fillers != na )
+
+			design[ i_blanks, i_patch ] = fillers
+
+		success = np.all( scipy.stats.mode( design, axis = 1 )[ 1 ] ==
+		                  conf.exp.n_incoh_patches
+		                )
+
+	design = design[ np.random.permutation( conf.exp.n_trials ), : ]
+
+	# all images equally represented
+	assert np.all( [ np.sum( design == x ) ==
+	                 conf.exp.n_mod_patches * conf.exp.n_img_rep_per_run
+	                 for x in xrange( conf.exp.n_img )
+	               ]
+	             )
+
+	( mode_img, mode_k ) = scipy.stats.mode( design, axis = 1 )
+
+	# half incoherent patches per trial
+	assert np.all( mode_k == conf.exp.n_incoh_patches )
+
+	# each image is the mode the correct number of times
+	assert np.all( [ np.sum( mode_img == x ) == conf.exp.n_img_rep_per_run
+	                 for x in xrange( conf.exp.n_img )
+	               ]
+	             )
+
+	return design
+
+
+def gen_exp_patch_timing( conf ):
+
+	rows = np.zeros( ( 4, conf.exp.n_mod_patches )  )
+	rows[ 0, :conf.exp.n_incoh_patches ] = 1
+	rows[ 1, conf.exp.n_incoh_patches: ] = 1
+	rows[ 2, np.arange( 0, conf.exp.n_mod_patches, 2 ) ] = 1
+	rows[ 3, np.arange( 1, conf.exp.n_mod_patches, 2 ) ] = 1
+
+	design = np.zeros( ( conf.exp.n_trials, conf.exp.n_mod_patches ) )
+
+	for i_img in xrange( conf.exp.n_img ):
+
+		patch_order = np.random.permutation( conf.exp.n_mod_patches )
+
+		i_design = np.arange( 4 ) + i_img * 4
+
+		design_unfulfilled[ i_design, : ] = i_img *  rows[ :, patch_order ]
+
+	oops = True
+
+	while oops:
+
+		design = design_unfulfilled.copy()
+
+		extras = np.tile( np.arange( 20 )[ :, np.newaxis ], ( 1, 2 ) )
+
+		for i_patch in xrange( conf.exp.n_mod_patches ):
+
+			design[ blanks, i_patch ] = extras[ np.random.permutation( len( extras ) ) ]
+
+		for i_img in xrange( 20 ):
+			for i_r in xrange( 4 ):
+				row = i_img * 4 + i_r
+
+	return rows
+
+
+def gen_exp_patch_timing_old( conf ):
 	"""Generates the image timing patterns for each patch.
 
 	Paramters
