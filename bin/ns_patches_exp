@@ -56,7 +56,7 @@ parser.add_argument( "--end",
 parser.add_argument( "--monitor",
                      help = "Monitor name",
                      type = str,
-                     default = "UMN_7T"
+                     default = "UMN_7T_colour"
                    )
 
 args = parser.parse_args()

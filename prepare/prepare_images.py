@@ -2,6 +2,8 @@
 import os, os.path
 import numpy as np
 
+import scipy.stats
+
 import psychopy.filters
 
 import stimuli.utils, stimuli.upenn_db
@@ -14,7 +16,8 @@ def img_browser( skip_discarded = True,
                  save_changes = False,
                  seek_to_first_A = False,
                  seek_to_id = None,
-                 mon_name = "UMN_7T"
+                 mon_name = "UMN_7T_colour",
+                 shuffle = False
                ):
 	"""Interface to browse through and select from the image database.
 
@@ -35,6 +38,9 @@ def img_browser( skip_discarded = True,
 	paths = ns_patches.paths.get_exp_paths( conf )
 
 	img_db_info = read_img_db_info( paths.img_db_info )
+
+	if shuffle:
+		img_db_info = img_db_info[ np.random.permutation( len( img_db_info ) ) ]
 
 	win = psychopy.visual.Window( ( 1024, 768 ),
 	                              fullscr = True,
@@ -69,10 +75,21 @@ def img_browser( skip_discarded = True,
 	i_img = i_first
 
 	# calculate a set of incoherent patches for each image
-	incoh = ns_patches.config.sel_incoh( n_patch = conf.exp.n_mod_patches,
-	                                     n_incoh = conf.exp.n_incoh_patches,
-	                                     n_trials = 80
-	                                   )
+#	incoh = ns_patches.config.sel_incoh( n_patch = conf.exp.n_mod_patches,
+#	                                     n_incoh = conf.exp.n_incoh_patches,
+#	                                     n_trials = 80
+#	                                   )
+
+	img_trials = ns_patches.config.gen_exp_patch_timing( conf )
+
+	incoh = np.zeros( ( conf.exp.n_incoh_patches, conf.exp.n_trials ) )
+
+	for i_trial in xrange( incoh.shape[ 1 ] ):
+		i_coh = scipy.stats.mode( img_trials[ i_trial, : ] )[ 0 ]
+
+		i_incoh = np.where( img_trials[ i_trial, : ] != i_coh )[ 0 ]
+
+		incoh[ :, i_trial ] = i_incoh
 
 	masks = ns_patches.exp.exp.gen_masks( conf )
 	stim = ns_patches.exp.exp.gen_stim( conf, win, masks )
@@ -102,7 +119,7 @@ def img_browser( skip_discarded = True,
 			else:
 				img_ok = True
 
-		new_img = np.zeros( [ conf.stim.img_diam_pix ] * 2 )
+		new_img = np.zeros( [ conf.stim.img_diam_pix ] * 2 + [ 3 ] )
 
 		# first set the coherent patches
 		img_path = os.path.join( paths.img_db,
@@ -113,7 +130,10 @@ def img_browser( skip_discarded = True,
 		coh_img = ns_patches.stimulus.load_img( img_path )
 
 		for i_coh_patch in coh_patches:
-			new_img += coh_img * ( masks[ i_coh_patch, ... ] > 0 )
+			for i_chan in xrange( 3 ):
+				new_img[ ..., i_chan ] += ( coh_img[ ..., i_chan ] *
+				                            ( masks[ i_coh_patch, ... ] > 0 )
+				                          )
 
 		# now set the incoherent patches
 		for i_incoh_patch in incoh_patches:
@@ -127,7 +147,10 @@ def img_browser( skip_discarded = True,
 
 			incoh_img = ns_patches.stimulus.load_img( incoh_path )
 
-			new_img += incoh_img * ( masks[ i_incoh_patch, ... ] > 0 )
+			for i_chan in xrange( 3 ):
+				new_img[ ..., i_chan ] += ( incoh_img[ ..., i_chan ] *
+				                            ( masks[ i_incoh_patch, ... ] > 0 )
+				                          )
 
 		stim.setImage( new_img )
 

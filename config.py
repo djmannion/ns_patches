@@ -92,7 +92,7 @@ def _get_acq_conf():
 
 	acq_conf = ConfigContainer()
 
-	acq_conf.monitor_name = "UMN_7T"
+	acq_conf.monitor_name = "UMN_7T_colour"
 	acq_conf.test_monitor_name = "N13_CRT"
 
 	acq_conf.tr_s = 2.0
@@ -172,11 +172,15 @@ def _get_stim_conf():
 	                [ 30, 150, 210, 330 ]
 	              ]
 
-	# ~ 1.8, 3.5, 6.1, 8.5 deg
-	ring_ecc = [ 62, 123, 212, 340 ]
+	# ~ 1.8, 3.5, 6.1, 9.75 deg
+#	ring_ecc = [ 62, 123, 212, 340 ]
+	ring_ecc = [ 58, 113, 196, 313 ]
 
-	# M0 = 29.2/3.67; M = 29.2/(e+3.67); D = M0/M*15*2
-	ring_diam = [ 45, 59, 80, 99 * 340./297 ]
+	# M0 = 29.2/3.67; M = 29.2/(e+3.67); D = M0/M*15*2*1.08
+	ring_diam = [ 45, 59, 80, 113 ]
+	ring_diam = map( lambda x : x * ( 1 / 1.08 ), ring_diam )
+
+#	ring_diam = [ 48, 63, 86, 118 ]
 
 	i_patch = 0
 
