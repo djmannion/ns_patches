@@ -8,7 +8,7 @@ import psychopy.visual, psychopy.misc, psychopy.event, psychopy.core
 import ns_patches.config, ns_patches.paths, ns_patches.prepare.prepare_images
 import ns_patches.exp.loc
 
-def run( subj_id, run_num, show_perf = True, mon_name = "UMN_7T" ):
+def run( subj_id, run_num, show_perf = True, mon_name = "UMN_7T_colour" ):
 
 	# no matter what, can't show performance if its the first run
 	if run_num == 1:
@@ -170,7 +170,7 @@ def run( subj_id, run_num, show_perf = True, mon_name = "UMN_7T" ):
 			img_album = img_db[ i_img ][ "album" ]
 
 			win.getMovieFrame()
-			win.saveMovieFrames( "caps/cap{t:02d}.png".format( t = i_seq ) )
+			win.saveMovieFrames( "caps/capn{t:02d}.png".format( t = i_seq ) )
 
 			# take this time to update our next stimulus
 			if i_seq < ( len( seq ) - 1 ):

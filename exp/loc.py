@@ -17,7 +17,7 @@ def run( run_num ):
 	timing = load_timing( conf, paths, run_num )
 
 	win = psychopy.visual.Window( ( 1024, 768 ),
-	                              monitor = "UMN_7T",
+	                              monitor = "UMN_7T_colour",
 	                              fullscr = True,
 	                              allowGUI = False
 	                            )
