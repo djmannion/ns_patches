@@ -271,13 +271,16 @@ def get_log_path( subj_id, run_num, paths, err_if_exist = True ):
 
 def update_stim( conf, stim, img, masks, img_seq ):
 
-	new_img = np.zeros( [ conf.stim.img_diam_pix ] * 2 )
+	new_img = np.zeros( [ conf.stim.img_diam_pix ] * 2 + [ 3 ] )
 
 	for i_patch in xrange( len( img_seq ) ):
 
 		i_img = img_seq[ i_patch ]
 
-		new_img += img[ i_img, ... ] * ( masks[ i_patch, ... ] > 0 )
+		for i_chan in xrange( 3 ):
+			new_img[ ..., i_chan ] += ( img[ i_img, :, :, i_chan ] *
+			                            ( masks[ i_patch, ... ] > 0 )
+			                          )
 
 	stim.setImage( new_img )
 
@@ -363,7 +366,8 @@ def load_images( conf, paths, img_db ):
 
 	img = np.empty( ( conf.exp.n_img,
 	                  conf.stim.img_diam_pix,
-	                  conf.stim.img_diam_pix
+	                  conf.stim.img_diam_pix,
+	                  3
 	                )
 	              )
 	img.fill( np.NAN )

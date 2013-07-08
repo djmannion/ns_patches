@@ -8,7 +8,8 @@ import stimuli.utils, stimuli.mcgill_db
 def load_img( img_path ):
 
 	image = stimuli.mcgill_db.read_image( img_path = img_path,
-	                                      linearise = True,
+	                                      linearise = False,
+	                                      convert_to_grey = False,
 	                                      normalise = True
 	                                    )
 
