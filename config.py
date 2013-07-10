@@ -180,8 +180,6 @@ def _get_stim_conf():
 	ring_diam = [ 45, 59, 80, 113 ]
 	ring_diam = map( lambda x : x * ( 1 / 1.08 ), ring_diam )
 
-#	ring_diam = [ 48, 63, 86, 118 ]
-
 	i_patch = 0
 
 	for ( i_ring, ( thetas, ecc, diam ) ) in enumerate( zip( ring_thetas,
@@ -218,51 +216,6 @@ def _get_stim_conf():
 	stim_conf.img_diam_pix = 1024
 
 	return stim_conf
-
-def _get_subj_conf( subj_id = None ):
-
-	s1000 = ConfigContainer()
-
-	s1000.subj_id = "s1000"
-	s1000.subj_id_loc = "s1000_loc"
-	s1000.acq_date = ""
-	s1000.acq_date_loc = "20130620"
-	s1000.comments = ""
-	s1000.n_runs = 12
-	s1000.n_loc_runs = 6
-	s1000.mot_base = 7
-	s1000.mot_base_loc = 4
-
-	s1000.extra_al_params = [ "-parang", "1", "-13", "-3",
-	                          "-parang", "2", "16", "26",
-	                          "-parang", "3", "6", "16",
-	                          "-maxrot", "10",
-	                          "-source_automask+2",
-	                          "-nocmass"
-	                        ]
-
-	s1000.extra_al_params_loc = [ "-parang", "1", "-13", "-3",
-	                              "-parang", "2", "16", "26",
-	                              "-parang", "3", "6", "16",
-	                              "-maxrot", "10",
-	                              "-source_automask+2",
-	                              "-nocmass"
-	                            ]
-
-	s1000.node_k = { "lh" : 130318,
-	                 "rh" : 131151
-	               }
-
-
-	subj = ConfigContainer()
-
-	subj.subj = { "s1000" : s1000,
-	            }
-
-	if subj_id is None:
-		return subj
-	else:
-		return subj.subj[ subj_id ]
 
 
 def make_loc_timing( conf ):
@@ -446,3 +399,60 @@ def gen_exp_patch_timing( conf ):
 	             )
 
 	return design
+
+
+def _get_subj_conf( subj_id = None ):
+
+	s1000 = ConfigContainer()
+
+	s1000.subj_id = "s1000"
+	s1000.acq_date = ""
+	s1000.comments = ""
+	s1000.n_runs = 12
+	s1000.mot_base = 7
+	s1000.is_loc = False
+
+	s1000.extra_al_params = [ "-parang", "1", "-13", "-3",
+	                          "-parang", "2", "16", "26",
+	                          "-parang", "3", "6", "16",
+	                          "-maxrot", "10",
+	                          "-source_automask+2",
+	                          "-nocmass"
+	                        ]
+
+	s1000.node_k = { "lh" : 130318,
+	                 "rh" : 131151
+	               }
+
+	s1000_loc = ConfigContainer()
+
+	s1000_loc.subj_id = "s1000_loc"
+	s1000_loc.acq_date = "20130620"
+	s1000_loc.comments = ""
+	s1000_loc.n_runs = 6
+	s1000_loc.mot_base = 4
+	s1000_loc.is_loc = True
+
+	s1000_loc.extra_al_params = [ "-parang", "1", "-13", "-3",
+	                              "-parang", "2", "16", "26",
+	                              "-parang", "3", "6", "16",
+	                              "-maxrot", "10",
+	                              "-source_automask+2",
+	                              "-nocmass"
+	                            ]
+
+	s1000_loc.node_k = { "lh" : 130318,
+	                     "rh" : 131151
+	                   }
+
+
+	subj = ConfigContainer()
+
+	subj.subj = { "s1000" : s1000, "s1000_loc" : s1000_loc
+	            }
+
+	if subj_id is None:
+		return subj
+	else:
+		return subj.subj[ subj_id ]
+

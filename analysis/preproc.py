@@ -118,57 +118,11 @@ def fieldmaps( conf, paths ):
 	logger = logging.getLogger( __name__ )
 	logger.info( "Running fieldmap preparation..." )
 
-	# first, need to resample the mag and phase images to match the functionals
-
-	# use the first corrected image as the image spec
-	master = paths.func.corrs[ 0 ].full( ".nii[0]" )
-
-	ref = conf.subj.subj_id + "_" + conf.exp.id + "-ref.nii"
-
-	os.chdir( paths.fmap.base.full() )
-
-	xtr_cmd = [ "3dcalc",
-	            "-a", master,
-	            "-expr", "a",
-	            "-prefix", ref
-	          ]
-
-	fmri_tools.utils.run_cmd( " ".join( xtr_cmd ) )
-
-	# use nipy to do the resampling; AFNI's doesn't seem to work properly
-	ref_img = nipy.io.api.load_image( ref )
-
-	for img_path in [ paths.fmap.mag.file( ".nii" ), paths.fmap.ph.file( ".nii" ) ]:
-
-		source_img = nipy.io.api.load_image( img_path )
-
-		if "ph" in img_path:
-
-			r = np.arange( 1, 4097 )
-
-			h = np.histogram( source_img._data.flatten(), r )
-
-			diff = r[ np.argmax( h[ 0 ] ) ] - 2048
-
-			source_img._data = np.mod( source_img._data - diff, 4096 )
-
-			nipy.io.api.save_image( source_img, img_path )
-
-			source_img = nipy.io.api.load_image( img_path )
-
-		# use NN resampling to avoid out-of-range problems with interpolation
-		resampled_img = nipy.algorithms.resample.resample_img2img( source_img,
-		                                                           ref_img,
-		                                                           order = 1
-		                                                         )
-
-		nipy.io.api.save_image( resampled_img, img_path )
-
-
 	fmri_tools.preproc.make_fieldmap( mag_path = paths.fmap.mag.full(),
 	                                  ph_path = paths.fmap.ph.full(),
 	                                  fmap_path = paths.fmap.fmap.full(),
-	                                  delta_te_ms = conf.acq.delta_te_ms
+	                                  delta_te_ms = conf.acq.delta_te_ms,
+	                                  recentre_ph = True
 	                                )
 
 
