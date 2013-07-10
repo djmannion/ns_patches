@@ -49,10 +49,14 @@ def get_subj_paths( conf ):
 	                   for orig in paths.func.origs
 	                 ]
 
-	paths.ana = _get_ana_paths( conf, paths )
 	paths.logs = _get_log_paths( conf, paths )
-	paths.roi = _get_roi_paths( conf, paths )
-	paths.loc = _get_loc_paths( conf, paths )
+
+	if conf.subj.is_loc:
+		paths.loc = _get_loc_paths( conf, paths )
+	else:
+		paths.ana = _get_ana_paths( conf, paths )
+		paths.roi = _get_roi_paths( conf, paths )
+
 
 	return paths
 
