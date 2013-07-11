@@ -406,6 +406,7 @@ def _get_subj_conf( subj_id = None ):
 	s1000 = ConfigContainer()
 
 	s1000.subj_id = "s1000"
+	s1000.fs_subj_id = "s1000"
 	s1000.acq_date = ""
 	s1000.comments = ""
 	s1000.n_runs = 12
@@ -427,6 +428,7 @@ def _get_subj_conf( subj_id = None ):
 	s1000_loc = ConfigContainer()
 
 	s1000_loc.subj_id = "s1000_loc"
+	s1000_loc.fs_subj_id = "s1000"
 	s1000_loc.acq_date = "20130620"
 	s1000_loc.comments = ""
 	s1000_loc.n_runs = 6

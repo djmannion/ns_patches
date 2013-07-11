@@ -10,15 +10,11 @@ import logging
 import glob
 
 import numpy as np
-import scipy.io
-
-import nipy.io.api
-import nipy.algorithms.resample
 
 import fmri_tools.preproc, fmri_tools.utils
 
 
-def convert( conf, paths ):
+def convert( paths ):
 	"""Converts the functionals and fieldmaps from dicom to nifti"""
 
 	logger = logging.getLogger( __name__ )
@@ -42,11 +38,12 @@ def convert( conf, paths ):
 
 
 	# check that they are all unique
-	assert( fmri_tools.utils.files_are_unique( file_list = [ img_path.full( ".nii" )
-	                                                         for img_path in img_paths
-	                                                       ]
-	                                         )
-	      )
+	are_unique = fmri_tools.utils.files_are_unique( [ img_path.full( ".nii" )
+	                                                  for img_path in img_paths
+	                                                ]
+	                                              )
+
+	assert are_unique
 
 	# files to go into the summary
 	summ_paths = [ orig.full() for orig in paths.func.origs ]
@@ -63,8 +60,8 @@ def st_correct( conf, paths ):
 	logger = logging.getLogger( __name__ )
 	logger.info( "Running slice-time correction..." )
 
-	# first, need to work out the slice acquisition times. These will be the same across all subjects,
-	# but might as well extract one for each subject.
+	# first, need to work out the slice acquisition times. These will be the same
+	# across all subjects, but might as well extract one for each subject.
 	dcm_file = glob.glob( paths.func.raws[ 0 ].full( "MR*.dcm" ) )[ 0 ]
 
 	acq_times = fmri_tools.utils.get_slice_acq_time_from_dcm( dcm_file )
@@ -98,7 +95,7 @@ def mot_correct( conf, paths ):
 
 	# `mot_base` is one-based in the config
 	i_base = conf.subj.mot_base - 1
-	base_path = "{fname:s}[0]".format( fname = paths.func.sts[ i_base ].full( ".nii" ) )
+	base_path = paths.func.sts[ i_base ].full( ".nii[0]" )
 
 	fmri_tools.preproc.mot_correct( orig_paths = st_paths,
 	                                corr_paths = corr_paths,
@@ -118,11 +115,15 @@ def fieldmaps( conf, paths ):
 	logger = logging.getLogger( __name__ )
 	logger.info( "Running fieldmap preparation..." )
 
+	# set a corrected EPI to define the space to resample to
+	ref_epi = paths.func.corrs[ 0 ].full( ".nii[0]" )
+
 	fmri_tools.preproc.make_fieldmap( mag_path = paths.fmap.mag.full(),
 	                                  ph_path = paths.fmap.ph.full(),
 	                                  fmap_path = paths.fmap.fmap.full(),
 	                                  delta_te_ms = conf.acq.delta_te_ms,
-	                                  recentre_ph = True
+	                                  ref_img = ref_epi,
+	                                  recentre_ph = "mode"
 	                                )
 
 
@@ -160,7 +161,7 @@ def sess_reg( conf, paths ):
 
 	logger.info( "Running registration..." )
 
-	if conf.subj.extra_al_params:
+	if conf.subj.extra_al_params is not None:
 		extra_al_params = conf.subj.extra_al_params
 	else:
 		extra_al_params = None
@@ -182,14 +183,22 @@ def vol_to_surf( conf, paths ):
 
 	start_dir = os.getcwd()
 
-	for ( uw_file, surf_file, run_dir ) in zip( paths.func.uws, paths.func.surfs, paths.func.runs ):
+	for ( uw_file, surf_file, run_dir ) in zip( paths.func.uws,
+	                                            paths.func.surfs,
+	                                            paths.func.runs
+	                                          ):
 
 		os.chdir( run_dir.full() )
 
 		for hemi in [ "lh", "rh" ]:
 
 			spec_file = paths.reg.spec.full( "_{hemi:s}.spec".format( hemi = hemi ) )
-			spec_file = spec_file.replace( conf.subj.subj_id, conf.subj.subj_id.split( "_" )[ 0 ] )
+
+			# replace the subject ID with what FreeSurfer/SUMA considers the subject
+			# ID to be
+			spec_file = spec_file.replace( conf.subj.subj_id, conf.subj.fs_subj_id )
+
+			surf_path = surf_file.full( "_{h:s}.niml.dset".format( h = hemi ) )
 
 			surf_cmd = [ "3dVol2Surf",
 			             "-spec", spec_file,
@@ -200,145 +209,10 @@ def vol_to_surf( conf, paths ):
 			             "-f_index", "nodes",
 			             "-sv", paths.reg.anat_reg.full( "+orig" ),
 			             "-grid_parent", uw_file.full( ".nii" ),
-			             "-out_niml", surf_file.full( "_{hemi:s}.niml.dset".format( hemi = hemi ) ),
+			             "-out_niml", surf_path,
 			             "-overwrite"
 			           ]
 
 			fmri_tools.utils.run_cmd( " ".join( surf_cmd ) )
 
 	os.chdir( start_dir )
-
-
-def design_prep( conf, paths ):
-	"""Prepares the designs for GLM analysis"""
-
-	# these are the text files we want to write that will contain the timing information for each
-	# condition
-	log_files = [ open( paths.ana.stim_times.full( "_{c:s}.txt".format( c = c ) ), "w" )
-	              for c in conf.ana.conds
-	            ]
-
-	# loop over each experimental run
-	for i_exp_run in xrange( conf.subj.n_exp_runs ):
-
-		# check whether each condition has a valid event in this run - we need to mark it in its log
-		# file if not
-		cond_valid_evt = [ False ] * len( conf.ana.conds )
-
-		# runtime log files stored as MATLAB mat files
-		log_path = paths.logs.logs.full( "{r:d}.mat".format( r = i_exp_run + 1 ) )
-
-		# load the log file
-		log = scipy.io.loadmat( log_path, struct_as_record = False, squeeze_me = True )
-
-		# get the onset time of the first trial, which is in arbitrary units
-		# for some subjects, this is coded in a special field
-		try:
-			t0 = log[ "p" ].trial_onset[ 0 ]
-
-		# but not all...
-		except AttributeError:
-
-			# in which case we need to rely on the first trial log
-			t0 = log[ "data_mat" ][ 0, 3 ]
-
-			# but we need to check that the first trial was recorded
-			if log[ "data_mat" ][ 0, 1 ] != 1:
-				raise ValueError( "No trial onset and no button press during first trial" )
-
-		# data is keypresses x param, where param is:
-		#  0 : subject number
-		#  1 : trial number
-		#  2 : response timestamp (same units as ``t0``)
-		#  3 : stimulus onset (same units as ``t0``)
-		#  4 : button one pressed (diamond)
-		#  5 : button two pressed (non-diamond)
-		#  6 : how long stimulus was up
-		#  7 : how long its been since the last switch
-		#  8 : trial type; 1 = short events (4s), 2 = longer (variable duration) events
-		data = log[ "data_mat" ]
-
-		# number of button presses; not necessarily same as the number of trials
-		n_press = data.shape[ 0 ]
-
-		# go through each button press
-		for i_press in xrange( n_press ):
-
-			# if we aren't on the last trial AND the next press has the same trial number, ignore this one
-			# and go onto the next
-
-			if ( ( i_press < ( n_press - 1 ) ) and
-			     ( data[ i_press + 1, 1 ] == data[ i_press, 1 ] )
-			   ):
-				continue
-
-			# subtract run start time offset to get into run-relative units
-			trial_start = data[ i_press, 3 ] - t0
-
-			if conf.subj.trig_on_ref:
-				trial_start += conf.acq.tr_s
-
-			# make sure they've pressed one, and only one, button
-			assert( np.sum( data[ i_press, [ 4, 5 ] ] ) == 1 )
-
-			sel_diamond = None
-
-			# find which of the button indices (4 or 5) is True
-			if data[ i_press, 4 ] == 1:
-				sel_diamond = True
-			elif data[ i_press, 5 ] == 1:
-				sel_diamond = False
-
-			if sel_diamond == None:
-				raise ValueError( "Shouldnt happen" )
-
-			# if a short event, duration is constant. Otherwise, it depends.
-			if data[ i_press, 8 ] == 1:
-				is_short = True
-				duration = 4.0
-			elif data[ i_press, 8 ] == 2:
-				is_short = False
-				duration = data[ i_press, 6 ]
-
-			# get the onset in an AFNI friendly format
-			time_str = "{o:.3f}".format( o = trial_start )
-
-			# work out which condition is appropriate, based on trial type and button press
-			if sel_diamond:
-				if is_short:
-					trial_cond = "di_short"
-				else:
-					# selected diamond to end the trial, meaning that most of it was non-diamond
-					trial_cond = "nd_long"
-			else:
-				if is_short:
-					trial_cond = "nd_short"
-				else:
-					# selected non-diamond to end the trial, meaning that most of it was diamond
-					trial_cond = "di_long"
-
-			# if its a 'long' trial, also need to add the duration info to the AFNI time string
-			if trial_cond in [ "di_long", "nd_long" ]:
-				time_str += ":{d:.3f}".format( d = duration )
-
-			# find out the index corresponding to this condition type
-			i_log = conf.ana.conds.index( trial_cond )
-
-			# and write the trial info
-			log_files[ i_log ].write( time_str + " " )
-
-			# note that we've found a valid event for this condition
-			cond_valid_evt[ i_log ] = True
-
-		# end of this run, so now we need to see whether there were any missing conditions
-		for ( i_log, cond_valid ) in enumerate( cond_valid_evt ):
-
-			# mark any empty conditions by a '*' on that line in the file
-			if not cond_valid:
-				log_files[ i_log ].write( "*" )
-
-		# end of the run, so write a newline to each log file
-		_ = [ log_file.write( "\n" ) for log_file in log_files ]
-
-	# all done
-	_ = [ log_file.close() for log_file in log_files ]
