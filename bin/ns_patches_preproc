@@ -27,7 +27,6 @@ def main():
 	  undistort : applies distortion correction to the functional data.
 	  sess_reg : register to the canonical anatomy.
 	  vol_to_surf : project the volumes onto the cortical surface.
-	  design_prep : prepares design specs for future GLM analysis.
 	
 	"""
 
@@ -49,8 +48,7 @@ def main():
 	                  "fieldmap",
 	                  "undistort",
 	                  "sess_reg",
-	                  "vol_to_surf",
-	                  "design_prep",
+	                  "vol_to_surf"
 	                )
 
 	parser.add_argument( "preproc_step",
@@ -59,10 +57,6 @@ def main():
 	                   )
 
 	args = parser.parse_args()
-
-	# check the arguments are valid
-#	if len( args.subj_id ) != 5 or args.subj_id[ 0 ] != "s":
-#		raise ValueError( "Subject ID needs to be in the format of sXXXX" )
 
 	# load the experiment / subject info
 	conf = ns_patches.config.get_conf( args.subj_id )
@@ -85,7 +79,7 @@ def main():
 	logger.addHandler( scr_log )
 
 	if args.preproc_step == "convert":
-		ns_patches.analysis.preproc.convert( conf, paths )
+		ns_patches.analysis.preproc.convert( paths )
 
 	elif args.preproc_step == "st_correct":
 		ns_patches.analysis.preproc.st_correct( conf, paths )
