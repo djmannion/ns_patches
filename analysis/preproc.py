@@ -118,7 +118,7 @@ def fieldmaps( conf, paths ):
 	# set a corrected EPI to define the space to resample to
 	ref_epi = paths.func.corrs[ 0 ].full( ".nii[0]" )
 
-	# 
+	# want to calculate a coarse brain mask from the epi
 	mask_path = paths.fmap.mask.full( ".nii" )
 	epi_run = conf.subj.mot_base - 1
 	epi_path = paths.summ.corr.full( ".nii[{n:d}]".format( n = epi_run ) )

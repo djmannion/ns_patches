@@ -128,7 +128,7 @@ def patch_id( conf, paths ):
 
 
 		# then, count how many significant regressors there are at each node
-		sig_sum_path = paths.log.sig_sum.full( hemi_ext )
+		sig_sum_path = paths.loc.sig_sum.full( hemi_ext )
 
 		sig_sum_cmd = [ "3dTstat",
 		                "-overwrite",
@@ -169,7 +169,7 @@ def patch_id( conf, paths ):
 
 		roi_path = paths.roi.vl.full( full_hemi_ext )
 
-		txt_path = paths.loc.patch.full( hemi_ext )
+		txt_path = paths.loc.patch_id.full( "_{h:s}.txt".format( h = hemi ) )
 
 		# 3dmaskdump won't overwrite, so need to manually remove any previous file
 		if os.path.exists( txt_path ):

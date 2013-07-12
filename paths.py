@@ -55,7 +55,8 @@ def get_subj_paths( conf ):
 		paths.loc = _get_loc_paths( conf, paths )
 	else:
 		paths.ana = _get_ana_paths( conf, paths )
-		paths.roi = _get_roi_paths( conf, paths )
+
+	paths.roi = _get_roi_paths( conf, paths )
 
 
 	return paths
