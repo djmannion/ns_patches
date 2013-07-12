@@ -8,7 +8,7 @@ import scipy.stats
 import fmri_tools.utils
 
 
-def loc_glm( conf, paths ):
+def glm( conf, paths ):
 	"""Localiser GLMs"""
 
 	logger = logging.getLogger( __name__ )
@@ -95,7 +95,7 @@ def loc_glm( conf, paths ):
 	os.chdir( start_dir )
 
 
-def loc_patch_id( conf, paths ):
+def patch_id( conf, paths ):
 	"""Form a mask from the GLM output"""
 
 	logger = logging.getLogger( __name__ )

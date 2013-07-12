@@ -440,6 +440,7 @@ def _get_subj_conf( subj_id = None ):
 	s1000_loc.n_runs = 6
 	s1000_loc.mot_base = 4
 	s1000_loc.is_loc = True
+	s1000_loc.mask_SI = 75
 
 	s1000_loc.extra_al_params = [ "-parang", "1", "-13", "-3",
 	                              "-parang", "2", "16", "26",
