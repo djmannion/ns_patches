@@ -3,6 +3,8 @@
 import os, os.path
 import logging
 
+import scipy.stats
+
 import fmri_tools.utils
 
 
@@ -100,72 +102,84 @@ def loc_patch_id( conf, paths ):
 	logger.info( "Running localiser patch identification..." )
 
 	# these are the t-statistics for each patch
-	beta_bricks = "[2..64(2)]"
+	t_bricks = "[2..64(2)]"
 
-	# 3.3 == p of 0.001
-	t_cutoff = 3.3 #2.58
+	t_cutoff = scipy.stats.t.isf( conf.loc.t_p, conf.loc.dof )
 
 	os.chdir( paths.loc.base.full() )
 
 	for hemi in [ "lh", "rh" ]:
 
-		glm_path = ( paths.loc.glm.full( "_{h:s}.niml.dset".format( h = hemi ) ) +
-		             beta_bricks
-		           )
+		hemi_ext = "_{h:s}.niml.dset".format( h = hemi )
 
-		amx_file = paths.loc.patch_id.full( "_{h:s}.niml.dset".format( h = hemi ) )
+		glm_path = paths.loc.glm.full( hemi_ext + t_bricks )
 
-		amax_cmd = [ "3dTstat",
-		             "-overwrite",
-		             "-argmax1",
-		             "-max",
-		             "-prefix", amx_file,
-		             glm_path
-		           ]
+		# first, mark each regressor as significant or not
+		sig_path = paths.loc.sig.full( hemi_ext )
 
-		fmri_tools.utils.run_cmd( " ".join( amax_cmd ) )
-
-		thr_cmd = [ "3dcalc",
-		            "-a", paths.loc.patch_id.full( "_{hemi:s}.niml.dset[1]".format( hemi = hemi ) ),
-		            "-expr", "'step(a-{t:.4f})'".format( t = t_cutoff ),
-		            "-prefix", paths.loc.patch_thr.full( "_{hemi:s}.niml.dset".format( hemi = hemi ) ),
+		sig_cmd = [ "3dcalc",
+		            "-a", glm_path,
+		            "-expr", "ispositive(step(a-{t:.4f}))".format( t = t_cutoff ),
+		            "-prefix", sig_path,
 		            "-overwrite"
 		          ]
 
-		fmri_tools.utils.run_cmd( " ".join( thr_cmd ) )
+		fmri_tools.utils.run_cmd( " ".join( sig_cmd ) )
 
-		bk_dset = paths.loc.patch.full( "_{hemi:s}.niml.dset".format( hemi = hemi ) )
 
-		bk_cmd = [ "3dbucket",
+		# then, count how many significant regressors there are at each node
+		sig_sum_path = paths.log.sig_sum.full( hemi_ext )
+
+		sig_sum_cmd = [ "3dTstat",
+		                "-overwrite",
+		                "-sum",
+		                "-prefix", sig_sum_path,
+		                sig_path
+		              ]
+
+		fmri_tools.utils.run_cmd( " ".join( sig_sum_cmd ) )
+
+
+		# now work out which ID is significant for each node, subject to the
+		# constraint that there is only one significant patch
+		id_path = paths.loc.patch_id.full( hemi_ext )
+
+		id_cmd = [ "3dTstat",
 		           "-overwrite",
-		           "-prefix", bk_dset,
-		           paths.loc.patch_id.full( "_{hemi:s}.niml.dset".format( hemi = hemi ) ),
-		           paths.loc.patch_thr.full( "_{hemi:s}.niml.dset".format( hemi = hemi ) )
+		           "-argmax1",
+		           "-prefix", id_path,
+		           "-mask", sig_sum_path,
+		           "-mrange", "1", "1",
+		           glm_path
 		         ]
 
-		fmri_tools.utils.run_cmd( " ".join( bk_cmd ) )
+		fmri_tools.utils.run_cmd( " ".join( id_cmd ) )
 
-		full_bk_dset = paths.loc.patch.full( "_{hemi:s}-full.niml.dset".format( hemi = hemi ) )
+		full_hemi_ext = "_{h:s}-full.niml.dset".format( h = hemi )
 
-		fmri_tools.utils.sparse_to_full( in_dset = bk_dset,
-		                                 out_dset = full_bk_dset,
-		                                 pad_node = "{n:d}".format( n = conf.subj.node_k[ hemi ] )
+		# need to pad to full for integration with ROIs
+		id_path_full = paths.loc.patch_id.full( full_hemi_ext )
+
+		pad_k = "{n:d}".format( n = conf.subj.node_k[ hemi ] )
+
+		fmri_tools.utils.sparse_to_full( in_dset = id_path,
+		                                 out_dset = id_path_full,
+		                                 pad_node = pad_k
 		                               )
 
-		roi_path = paths.roi.vl.full( "_{hemi:s}-full.niml.dset".format( hemi = hemi ) )
+		roi_path = paths.roi.vl.full( full_hemi_ext )
 
-		txt_path = paths.loc.patch.full( "_{hemi:s}.txt".format( hemi = hemi ) )
+		txt_path = paths.loc.patch.full( hemi_ext )
 
 		# 3dmaskdump won't overwrite, so need to manually remove any previous file
 		if os.path.exists( txt_path ):
 			os.remove( txt_path )
 
 		xtr_cmd = [ "3dmaskdump",
-		            "-mask", full_bk_dset + "[2]",
 		            "-noijk",
 		            "-o", txt_path,
 		            roi_path,
-		            full_bk_dset + "[0]"
+		            id_path_full
 		          ]
 
 		fmri_tools.utils.run_cmd( " ".join( xtr_cmd ) )
