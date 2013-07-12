@@ -190,9 +190,10 @@ def img_browser( skip_discarded = True,
 					change_image = True
 
 				elif key in [ "space", "r" ]:
-					img_db_info[ i_img ] = coh_img_info
-					i_img += 1
-					change_image = True
+					if not mask_off:
+						img_db_info[ i_img ] = coh_img_info
+						i_img += 1
+						change_image = True
 
 				elif key == "y":
 					coh_img_info[ "status" ] = "Y"
