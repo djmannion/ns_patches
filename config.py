@@ -144,6 +144,12 @@ def _get_loc_conf( conf ):
 
 	loc_conf.n_max_runs = 6
 
+	# t-threshold for analysis
+	loc_conf.t_p = 0.001
+
+	# degrees of freedom
+	loc_conf.dof = 844
+
 	return loc_conf
 
 

@@ -66,7 +66,7 @@ def _get_loc_paths( conf, paths ):
 
 	loc = fmri_tools.paths.PathsHandler()
 
-	loc.base = paths.base / "loc_analysis"
+	loc.base = paths.base / "analysis"
 
 	subj_id = conf.subj.subj_id
 	exp_id = conf.exp.id
@@ -78,9 +78,9 @@ def _get_loc_paths( conf, paths ):
 	loc.glm = loc.base + ( file_base + "glm" )
 	loc.beta = loc.base + ( file_base + "beta" )
 
+	loc.sig = loc.base + ( file_base + "sig" )
 	loc.patch_id = loc.base + ( file_base + "patch_id" )
-	loc.patch_thr = loc.base + ( file_base + "patch_thr" )
-	loc.patch = loc.base + ( file_base + "patch" )
+	loc.sig_sum = loc.base + ( file_base + "sig_sum" )
 
 	loc.timing_base = ( loc.base /
 	                    "timing" +
