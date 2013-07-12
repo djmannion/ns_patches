@@ -138,11 +138,13 @@ def img_browser( skip_discarded = True,
 		# now set the incoherent patches
 		for i_incoh_patch in incoh_patches:
 
-			i_incoh_img = np.random.choice( len( img_db_info ) )
+			valid_img_db = img_db_info[ img_db_info[ "status" ] == "Y" ]
+
+			i_incoh_img = np.random.choice( len( valid_img_db ) )
 
 			incoh_path = os.path.join( paths.img_db,
-			                           img_db_info[ i_incoh_img ][ "album" ],
-			                           img_db_info[ i_incoh_img ][ "image" ]
+			                           valid_img_db[ i_incoh_img ][ "album" ],
+			                           valid_img_db[ i_incoh_img ][ "image" ]
 			                         )
 
 			incoh_img = ns_patches.stimulus.load_img( incoh_path )
