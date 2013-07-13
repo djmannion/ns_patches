@@ -156,7 +156,7 @@ def unwarp( conf, paths ):
 	fugue_params = [ "--median" ]
 
 	# add a mask to the unwarp output
-	applywarp_params = [ "--mask=" + paths.fmap.mag.full( "-mask" ) ]
+	applywarp_params = [ "--mask=" + paths.fmap.mag.full( "-rs-mask" ) ]
 
 	for ( corr_path, uw_path, shift_path, warp_path ) in zip( paths.func.corrs,
 	                                                          paths.func.uws,
