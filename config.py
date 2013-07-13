@@ -415,8 +415,8 @@ def _get_subj_conf( subj_id = None ):
 	s1000.fs_subj_id = "s1000"
 	s1000.acq_date = ""
 	s1000.comments = ""
-	s1000.n_runs = 12
-	s1000.mot_base = 7
+	s1000.n_runs = 10
+	s1000.mot_base = 6
 	s1000.is_loc = False
 
 	s1000.extra_al_params = [ "-parang", "1", "-13", "-3",
