@@ -157,6 +157,8 @@ def _get_log_paths( conf, paths ):
 
 	logs.logs = logs.base + ( file_base )
 
+	logs.run_log_base = logs.base + ( subj_id + "_ns_patches-run_" )
+
 	return logs
 
 
