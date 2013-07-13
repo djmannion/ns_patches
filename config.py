@@ -105,14 +105,6 @@ def _get_acq_conf():
 	# phase encode direction, according to the data's internal axes
 	acq_conf.ph_enc_dir = "x"
 
-	# axis index that corresponds to the inplanes
-	# this is zero-based; 0 = LR, 1 = PA, 2 = IS (assuming reshape_to_RAS has been
-	# set correctly)
-	acq_conf.slice_axis = 1
-
-	# direction in which slices were acquired along the axis
-	acq_conf.slice_acq_dir = "+1"
-
 	# number of slices acquired
 	acq_conf.n_slices = 36
 
@@ -418,10 +410,11 @@ def _get_subj_conf( subj_id = None ):
 	s1000.n_runs = 10
 	s1000.mot_base = 6
 	s1000.is_loc = False
+	s1000.mask_SI = 80
 
-	s1000.extra_al_params = [ "-parang", "1", "-13", "-3",
+	s1000.extra_al_params = [ "-parang", "1", "-10", "0",
 	                          "-parang", "2", "16", "26",
-	                          "-parang", "3", "6", "16",
+	                          "-parang", "3", "10", "20",
 	                          "-maxrot", "10",
 	                          "-source_automask+2",
 	                          "-nocmass"
