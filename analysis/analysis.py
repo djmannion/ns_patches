@@ -12,19 +12,15 @@ def _get_timing( conf, paths ):
 
 	timing = []
 
-	i_reg = 1
-
 	pre_len_s = conf.exp.n_censor_vols * conf.acq.tr_s
 
 	for run_num in xrange( 1, conf.subj.n_runs + 1 ):
 
 		# load the run log file
-		run_ext = "_{r:d}_log.npz".format( r = run_num )
+		run_ext = "{r:02d}_log.npz".format( r = run_num )
 		run_log = np.load( paths.logs.run_log_base.full( run_ext ) )
 
 		run_seq = run_log[ "seq" ]
-
-		n_pre = np.sum( run_seq < pre_len_s )
 
 		run_evt = []
 
@@ -42,11 +38,34 @@ def _get_timing( conf, paths ):
 		i_pre_evts = np.where( run_seq < pre_len_s )[ 0 ]
 
 		for ( i_countback, i_pre ) in enumerate( i_pre_evts[ ::-1 ] ):
-			run_evt[ -( i_countback + 1 ) ].extend( run_seq[ i_pre ] )
+			run_evt[ -( i_countback + 1 ) ].append( run_seq[ i_pre ] )
 
 		timing.append( run_evt )
 
-	return timing
+	regress_num = 1
+
+	regress = []
+
+	for i_run in xrange( len( timing ) ):
+
+		run_timing = timing[ i_run ]
+
+		for i_evt in xrange( len( run_timing ) ):
+
+			evt_global_s = [ t + ( i_run * conf.exp.run_len_s )
+			                 for t in sorted( run_timing[ i_evt ] )
+			               ]
+
+			evt_str = [ "{n:.0f}".format( n = n ) for n in evt_global_s ]
+
+			regress.append( [ "{n:d}".format( n = regress_num ),
+			                  " ".join( evt_str )
+			                ]
+			              )
+
+			regress_num += 1
+
+	return regress
 
 
 
@@ -59,29 +78,7 @@ def glm( conf, paths ):
 
 	start_dir = os.getcwd()
 
-	# write timing files
-	timing_path = paths.ana.stim_times.full( ".txt" )
-
-	with open( timing_path, "w" ) as timing_file:
-
-
-			# we're interested in the 'seq' variable
-			run_seq = run_log[ "seq" ]
-
-
-			# estimate 26s as the duration of an event
-			# if we don't cull these events, they are zero in the GLM and that messes
-			# stuff up
-			cull_from_pre_cutoff = pre_len_s - 26
-
-			i_keep = ( run_seq > cull_from_pre_cutoff )
-
-			run_seq = run_seq[ i_keep ]
-
-			# convert to strings
-			seq_str = [ "{n:.02f}".format( n = n ) for n in run_seq ]
-
-			timing_file.write( " ".join( seq_str ) + "\n" )
+	regressors = _get_timing( conf, paths )
 
 	os.chdir( paths.ana.base.full() )
 
@@ -107,20 +104,33 @@ def glm( conf, paths ):
 
 		glm_cmd.extend( [ "-force_TR", "{tr:.3f}".format( tr = conf.acq.tr_s ),
 		                  "-polort", "a",  # auto baseline degree
-		                  "-local_times",
+		                  "-global_times",
 		                  "-CENSORTR", censor_str,
 		                  "-xjpeg", "exp_design.png",
 		                  "-x1D", "exp_design",
 		                  "-overwrite",
 		                  "-x1D_stop",  # want to use REML, so don't bother running
-		                  "-num_stimts", "1",
-		                  "-stim_times_IM", "1", timing_path, model_str,
-		                  "-stim_label", "1", "stim"
+		                  "-num_stimts", "{n:d}".format( n = len( regressors ) )
 		                ]
 		              )
 
+		# now comes the behemoth
+		for ( reg_num, reg_times ) in regressors:
+
+			glm_cmd.extend( [ "-stim_label", reg_num, "r" + reg_num ] )
+
+			glm_cmd.extend( [ "-stim_times",
+			                  "'1D: " + reg_times + "'",
+			                  model_str
+			                ]
+			              )
+
 		# run this first GLM
-		fmri_tools.utils.run_cmd( " ".join( glm_cmd ) )
+#		fmri_tools.utils.run_cmd( " ".join( glm_cmd ) )
+
+		print " ".join( glm_cmd )
+
+		return
 
 		# delete the annoying command file that 3dDeconvolve writes
 		os.remove( "Decon.REML_cmd" )

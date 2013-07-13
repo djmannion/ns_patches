@@ -256,9 +256,9 @@ def eval_resp( resp_status ):
 
 def get_log_path( subj_id, run_num, paths, err_if_exist = True ):
 
-	log_file = "{s:s}_ns_patches-run_{r:d}_log.npz".format( s = subj_id,
-	                                                        r = run_num,
-	                                                      )
+	log_file = "{s:s}_ns_patches-run_{r:02d}_log.npz".format( s = subj_id,
+	                                                          r = run_num
+	                                                        )
 
 	log_path = os.path.join( paths.log_dir, log_file )
 
