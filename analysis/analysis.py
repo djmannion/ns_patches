@@ -8,6 +8,49 @@ import numpy as np
 import fmri_tools.utils
 
 
+def _get_timing( conf, paths ):
+
+	timing = []
+
+	i_reg = 1
+
+	pre_len_s = conf.exp.n_censor_vols * conf.acq.tr_s
+
+	for run_num in xrange( 1, conf.subj.n_runs + 1 ):
+
+		# load the run log file
+		run_ext = "_{r:d}_log.npz".format( r = run_num )
+		run_log = np.load( paths.logs.run_log_base.full( run_ext ) )
+
+		run_seq = run_log[ "seq" ]
+
+		n_pre = np.sum( run_seq < pre_len_s )
+
+		run_evt = []
+
+		for evt_t in run_seq:
+
+			# postpone pre events, for now
+			if evt_t < pre_len_s:
+				continue
+
+			run_evt.append( [ evt_t ] )
+
+		assert len( run_evt ) == conf.exp.n_trials
+
+		# now go back to the pre events
+		i_pre_evts = np.where( run_seq < pre_len_s )[ 0 ]
+
+		for ( i_countback, i_pre ) in enumerate( i_pre_evts[ ::-1 ] ):
+			run_evt[ -( i_countback + 1 ) ].extend( run_seq[ i_pre ] )
+
+		timing.append( run_evt )
+
+	return timing
+
+
+
+
 def glm( conf, paths ):
 	"""Experiment GLM"""
 
@@ -21,16 +64,10 @@ def glm( conf, paths ):
 
 	with open( timing_path, "w" ) as timing_file:
 
-		for run_num in xrange( 1, conf.subj.n_runs + 1 ):
-
-			# load the run log file
-			run_ext = "_{r:d}_log.npz".format( r = run_num )
-			run_log = np.load( paths.logs.run_log_base.full( run_ext ) )
 
 			# we're interested in the 'seq' variable
 			run_seq = run_log[ "seq" ]
 
-			pre_len_s = conf.exp.n_censor_vols * conf.acq.tr_s
 
 			# estimate 26s as the duration of an event
 			# if we don't cull these events, they are zero in the GLM and that messes
