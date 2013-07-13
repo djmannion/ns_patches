@@ -112,7 +112,7 @@ def _get_ana_paths( conf, paths ):
 	ana.bl = ana.base + ( file_base + "bl" )
 	ana.psc = ana.base + ( file_base + "psc" )
 
-	ana.fdr = ana.base + ( file_base + "fdr" )
+	ana.vl = ana.base + ( file_base + "vis_loc_rois" )
 	ana.mask = ana.base + ( file_base + "mask" )
 
 	return ana
@@ -130,10 +130,7 @@ def _get_roi_paths( conf, paths ):
 
 	file_base = "{subj_id:s}_{exp_id:s}-".format( subj_id = subj_id, exp_id = exp_id )
 
-	roi.vl = roi.base + ( file_base + "vis_loc_rois" )
-	roi.vl_subset = roi.base + ( file_base + "vis_loc_rois_subset" )
 
-	roi.mask_rois = roi.base + ( file_base + "mask_rois" )
 	roi.rois = roi.base + ( file_base + "rois" )
 
 	roi.psc = roi.base + ( file_base + "psc" )

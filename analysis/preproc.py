@@ -245,4 +245,13 @@ def vol_to_surf( conf, paths ):
 
 			fmri_tools.utils.run_cmd( " ".join( surf_cmd ) )
 
+			# convert to full
+			full_path = surf_file.full( "_{h:s}-full.niml.dset".format( h = hemi ) )
+
+			node_str = "{n:d}".format( n = conf.subj.node_k[ hemi ] )
+			fmri_tools.utils.sparse_to_full( in_dset = surf_path,
+			                                 out_dset = full_path,
+			                                 pad_node = node_str
+			                               )
+
 	os.chdir( start_dir )
