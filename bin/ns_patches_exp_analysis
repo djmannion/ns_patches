@@ -1,19 +1,19 @@
 #! /usr/bin/env python2
 
-"""Runs a pre-processing step for a subject in the ns_patches fMRI experiment"""
+"""Runs an analysis step for a subject in the ns_patches fMRI experiment"""
 
 import argparse
 import logging
 import sys
 
 import ns_patches.config, ns_patches.paths
-import ns_patches.analysis.subj_analysis
+import ns_patches.analysis.analysis
 
 
 def main():
 	"""Execution function"""
 
-	desc = """Runs a pre-processing step for a subject in the ns_patches fMRI experiment"""
+	desc = "Runs an analysis step for a subject in the ns_patches fMRI experiment"
 
 	eg = """
 	Example usage:
@@ -21,13 +21,7 @@ def main():
 	    ns_patches_preproc s1000 correct
 	
 	Steps:
-	  convert : converts the scanner DICOM images to NIFTIs.
-	  correct : performs motion correction.
-	  fieldmap : prepares the fieldmaps.
-	  undistort : applies distortion correction to the functional data.
-	  sess_reg : register to the canonical anatomy.
-	  vol_to_surf : project the volumes onto the cortical surface.
-	  design_prep : prepares design specs for future GLM analysis.
+	  glm : run the GLM
 	
 	"""
 
@@ -43,14 +37,8 @@ def main():
 	                     help = "Subject identifier"
 	                   )
 
-	proc_steps = ( "loc_glm",
-	               "loc_patch_id",
-	               "mot_correct",
-	               "fieldmap",
-	               "undistort",
-	               "sess_reg",
-	               "vol_to_surf",
-	               "design_prep",
+	proc_steps = ( "glm",
+	               "",
 	             )
 
 	parser.add_argument( "proc_step",
@@ -60,10 +48,6 @@ def main():
 
 	args = parser.parse_args()
 
-	# check the arguments are valid
-#	if len( args.subj_id ) != 5 or args.subj_id[ 0 ] != "s":
-#		raise ValueError( "Subject ID needs to be in the format of sXXXX" )
-
 	# load the experiment / subject info
 	conf = ns_patches.config.get_conf( args.subj_id )
 	paths = ns_patches.paths.get_subj_paths( conf )
@@ -71,7 +55,8 @@ def main():
 	logger = logging.getLogger()
 	logger.setLevel( logging.INFO )
 
-	log_fmt = logging.Formatter( "%(name)s, %(asctime)s, (%(levelname)s)\n-----\n%(message)s\n" )
+	log_str = "%(name)s, %(asctime)s, (%(levelname)s)\n-----\n%(message)s\n"
+	log_fmt = logging.Formatter( log_str )
 
 	file_log = logging.FileHandler( paths.log.full() )
 	file_log.setFormatter( log_fmt )
@@ -84,11 +69,11 @@ def main():
 
 	logger.addHandler( scr_log )
 
-	if args.proc_step == "loc_glm":
-		ns_patches.analysis.subj_analysis.loc_glm( conf, paths )
+	if args.proc_step == "glm":
+		ns_patches.analysis.analysis.glm( conf, paths )
 
-	elif args.proc_step == "loc_patch_id":
-		ns_patches.analysis.subj_analysis.loc_patch_id( conf, paths )
+	elif args.proc_step == "patch_id":
+		ns_patches.analysis.loc_analysis.patch_id( conf, paths )
 
 
 	else:
