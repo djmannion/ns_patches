@@ -92,11 +92,25 @@ def glm( conf, paths ):
 
 	for hemi in [ "lh", "rh" ]:
 
+		hemi_ext = "_{h:s}".format( h = hemi )
+
+		# write the ROI mask
+		mask_file = paths.ana.mask.full( hemi_ext + "-full.niml.dset" )
+		mask_cmd = [ "3dcalc",
+		             "-a",
+		             paths.ana.vl.full( hemi_ext + "-full.niml.dset" ),
+		             "-expr", "equals(a,1)",
+		             "-prefix", mask_file,
+		             "-overwrite"
+		           ]
+
+		fmri_tools.utils.run_cmd( " ".join( mask_cmd ) )
+
 		glm_cmd = [ "3dDeconvolve",
 		            "-input"
 		          ]
 
-		surf_paths = [ surf_path.full( "_{h:s}.niml.dset".format( h = hemi ) )
+		surf_paths = [ surf_path.full( "_{h:s}-full.niml.dset".format( h = hemi ) )
 		               for surf_path in paths.func.surfs
 		             ]
 
@@ -104,6 +118,7 @@ def glm( conf, paths ):
 
 		glm_cmd.extend( [ "-force_TR", "{tr:.3f}".format( tr = conf.acq.tr_s ),
 		                  "-polort", "a",  # auto baseline degree
+		                  "-mask", mask_file,
 		                  "-global_times",
 		                  "-CENSORTR", censor_str,
 		                  "-xjpeg", "exp_design.png",
@@ -120,17 +135,14 @@ def glm( conf, paths ):
 			glm_cmd.extend( [ "-stim_label", reg_num, "r" + reg_num ] )
 
 			glm_cmd.extend( [ "-stim_times",
+			                  reg_num,
 			                  "'1D: " + reg_times + "'",
 			                  model_str
 			                ]
 			              )
 
 		# run this first GLM
-#		fmri_tools.utils.run_cmd( " ".join( glm_cmd ) )
-
-		print " ".join( glm_cmd )
-
-		return
+		fmri_tools.utils.run_cmd( " ".join( glm_cmd ) )
 
 		# delete the annoying command file that 3dDeconvolve writes
 		os.remove( "Decon.REML_cmd" )
@@ -140,6 +152,7 @@ def glm( conf, paths ):
 
 		reml_cmd = [ "3dREMLfit",
 		             "-matrix", "exp_design.xmat.1D",
+		             "-mask", mask_file,
 		             "-Rbeta", beta_file,
 		             "-tout",
 		             "-Rbuck", buck_file,
