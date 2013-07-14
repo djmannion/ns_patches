@@ -4,8 +4,11 @@ import os, os.path
 import logging
 
 import numpy as np
+import scipy.stats
 
 import fmri_tools.utils
+
+import ns_patches.config, ns_patches.paths
 
 
 def _get_timing( conf, paths ):
@@ -17,8 +20,7 @@ def _get_timing( conf, paths ):
 	for run_num in xrange( 1, conf.subj.n_runs + 1 ):
 
 		# load the run log file
-		run_ext = "{r:02d}_log.npz".format( r = run_num )
-		run_log = np.load( paths.logs.run_log_base.full( run_ext ) )
+		run_log = _load_run_log( run_num, paths )
 
 		run_seq = run_log[ "seq" ]
 
@@ -147,8 +149,8 @@ def glm( conf, paths ):
 		# delete the annoying command file that 3dDeconvolve writes
 		os.remove( "Decon.REML_cmd" )
 
-		beta_file = paths.ana.beta.file( "_{h:s}.niml.dset".format( h = hemi ) )
-		buck_file = paths.ana.glm.file( "_{h:s}.niml.dset".format( h = hemi ) )
+		beta_file = paths.ana.beta.file( hemi_ext + "-full.niml.dset" )
+		buck_file = paths.ana.glm.file( hemi_ext + "-full.niml.dset" )
 
 		reml_cmd = [ "3dREMLfit",
 		             "-matrix", "exp_design.xmat.1D",
@@ -166,5 +168,186 @@ def glm( conf, paths ):
 		fmri_tools.utils.run_cmd( " ".join( reml_cmd ) )
 
 	os.chdir( start_dir )
+
+
+def beta_to_psc( conf, paths ):
+	"""Convert the beta estimates into units of percent signal change"""
+
+	start_dir = os.getcwd()
+	os.chdir( paths.ana.base.full() )
+
+	for hemi in [ "lh", "rh" ]:
+
+		hemi_ext = "_{h:s}-full.niml.dset".format( h = hemi )
+
+		beta_path = paths.ana.beta.full( hemi_ext )
+		design_path = "exp_design.xmat.1D"
+
+		# to write
+		bltc_path = paths.ana.bltc.file( hemi_ext )
+		bl_path = paths.ana.bl.file( hemi_ext )
+		psc_path = paths.ana.psc.file( hemi_ext )
+
+		# 4 orthogonal polynomial regressors per run
+		n_nuisance = conf.subj.n_runs * 4
+
+
+		beta_bricks = "[{n:d}..$]".format( n = n_nuisance )
+
+		fmri_tools.utils.beta_to_psc( beta_path,
+		                              beta_bricks,
+		                              design_path,
+		                              bltc_path,
+		                              bl_path,
+		                              psc_path,
+		                            )
+
+	os.chdir( start_dir )
+
+
+def patch_dump( conf, paths ):
+	"""Write out the PSC and patch ID for each node"""
+
+	loc_id = conf.subj.subj_id + "_loc"
+	loc_conf = ns_patches.config.get_conf( loc_id )
+	loc_paths = ns_patches.paths.get_subj_paths( loc_conf )
+
+	resp = []
+
+	for hemi in [ "lh", "rh" ]:
+
+		hemi_ext = "_{h:s}".format( h = hemi )
+
+		# location of the patch ID
+		id_path = loc_paths.loc.patch_id.full( hemi_ext + "-full.niml.dset" )
+
+		psc_path = paths.ana.psc.full( hemi_ext + "-full.niml.dset" )
+
+		resp_path = paths.ana.patch_resp.full( hemi_ext + ".txt" )
+
+		if os.path.exists( resp_path ):
+			os.remove( resp_path )
+
+		cmd = [ "3dmaskdump",
+		        "-noijk",
+		        "-mask", id_path,
+		        "-o", resp_path,
+		        id_path,
+		        psc_path
+		      ]
+
+		fmri_tools.utils.run_cmd( " ".join( cmd ) )
+
+		resp.append( np.loadtxt( resp_path ) )
+
+	resp = np.vstack( resp )
+
+	resp_path = paths.ana.patch_resp.full( ".txt" )
+
+	np.savetxt( resp_path, resp )
+
+
+def _load_run_log( run_num, paths ):
+
+	# load the run log file
+	run_ext = "{r:02d}_log.npz".format( r = run_num )
+	run_log = np.load( paths.logs.run_log_base.full( run_ext ) )
+
+	return run_log
+
+
+def image_resp( conf, paths ):
+	"""Calculate the response to each image"""
+
+	resp_path = paths.ana.patch_resp.full( ".txt" )
+
+	# nodes x trials
+	resp = np.loadtxt( resp_path )
+
+	# first step is to convert to patch x trial
+	# the '-1' is because `resp` has a column for the patch id
+	patch_data = np.empty( ( conf.exp.n_mod_patches, resp.shape[ 1 ] - 1 ) )
+	patch_data.fill( np.NAN )
+
+	for i_patch in xrange( conf.exp.n_mod_patches ):
+
+		# in `resp`, patch ID is stored as one-based
+		i_node_patch = np.where( resp[ :, 0 ] == ( i_patch + 1 ) )[ 0 ]
+
+		# average over nodes for this patch
+		patch_data[ i_patch, : ] = np.mean( resp[ i_node_patch, 1: ], axis = 0 )
+
+	assert np.sum( np.isnan( patch_data ) ) == 0
+
+	img_resp = np.empty( ( conf.exp.n_mod_patches,
+	                       conf.exp.n_img,
+	                       conf.subj.n_runs,
+	                       2
+	                     )
+	                   )
+	img_resp.fill( np.NAN )
+
+	# now we need to load the run info
+	for run_num in xrange( 1, conf.subj.n_runs + 1 ):
+
+		run_log = _load_run_log( run_num, paths )
+
+		# `img_trials` is patches x trials
+		img_trials = run_log[ "img_trials" ]
+
+		# cull the pre-trials
+		img_trials = img_trials[ :, -conf.exp.n_trials: ]
+
+		assert img_trials.shape[ 1 ] == conf.exp.n_trials
+
+		# and limit to the modulated patches
+		img_trials = img_trials[ conf.exp.mod_patches, : ]
+
+		assert img_trials.shape[ 0 ] == conf.exp.n_mod_patches
+
+		i_coh_img = scipy.stats.mode( img_trials, axis = 0 )[ 0 ][ 0 ]
+
+		i_run_offset = ( run_num - 1 ) * conf.exp.n_trials
+
+		for i_patch in xrange( conf.exp.n_mod_patches ):
+
+			patch_info = img_trials[ i_patch, : ]
+
+			for i_img in xrange( conf.exp.n_img ):
+
+				# find out the trials where this patch showed the image
+				i_coh_trials = np.where( np.logical_and( patch_info == i_img,
+				                                         i_img == i_coh_img
+				                                       )
+				                       )[ 0 ]
+
+				i_incoh_trials = np.where( np.logical_and( patch_info == i_img,
+				                                           i_img != i_coh_img
+				                                         )
+				                         )[ 0 ]
+
+				assert len( np.intersect1d( i_coh_trials, i_incoh_trials ) ) == 0
+
+				assert len( i_coh_trials ) == 2
+				assert len( i_incoh_trials ) == 2
+
+				i_coh_trials += i_run_offset
+				i_incoh_trials += i_run_offset
+
+				coh_mean = np.mean( patch_data[ i_patch, i_coh_trials ] )
+				img_resp[ i_patch, i_img, run_num - 1, 0 ] = coh_mean
+
+				incoh_mean = np.mean( patch_data[ i_patch, i_incoh_trials ] )
+				img_resp[ i_patch, i_img, run_num - 1, 1 ] = incoh_mean
+
+	assert np.sum( np.isnan( img_resp ) ) == 0
+
+	return img_resp
+
+
+
+
+
+
 
 

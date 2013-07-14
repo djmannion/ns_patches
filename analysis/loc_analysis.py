@@ -142,12 +142,12 @@ def patch_id( conf, paths ):
 
 		# now work out which ID is significant for each node, subject to the
 		# constraint that there is only one significant patch
-		id_path = paths.loc.patch_id.full( hemi_ext )
+		all_id_path = paths.loc.all_patch_id.full( hemi_ext )
 
 		id_cmd = [ "3dTstat",
 		           "-overwrite",
 		           "-argmax1",
-		           "-prefix", id_path,
+		           "-prefix", all_id_path,
 		           "-mask", sig_sum_path,
 		           "-mrange", "1", "1",
 		           glm_path
@@ -158,28 +158,25 @@ def patch_id( conf, paths ):
 		full_hemi_ext = "_{h:s}-full.niml.dset".format( h = hemi )
 
 		# need to pad to full for integration with ROIs
-		id_path_full = paths.loc.patch_id.full( full_hemi_ext )
+		all_id_path_full = paths.loc.all_patch_id.full( full_hemi_ext )
 
 		pad_k = "{n:d}".format( n = conf.subj.node_k[ hemi ] )
 
-		fmri_tools.utils.sparse_to_full( in_dset = id_path,
-		                                 out_dset = id_path_full,
+		fmri_tools.utils.sparse_to_full( in_dset = all_id_path,
+		                                 out_dset = all_id_path_full,
 		                                 pad_node = pad_k
 		                               )
 
-		roi_path = paths.roi.vl.full( full_hemi_ext )
+		# now for V1 only
+		id_path_full = paths.loc.patch_id.full( full_hemi_ext )
+		roi_path = paths.loc.vl.full( full_hemi_ext )
 
-		txt_path = paths.loc.patch_id.full( "_{h:s}.txt".format( h = hemi ) )
+		cmd = [ "3dcalc",
+		        "-a", all_id_path_full,
+		        "-b", roi_path,
+		        "-expr", "a*within(b,1,1)",
+		        "-overwrite",
+		        "-prefix", id_path_full
+		      ]
 
-		# 3dmaskdump won't overwrite, so need to manually remove any previous file
-		if os.path.exists( txt_path ):
-			os.remove( txt_path )
-
-		xtr_cmd = [ "3dmaskdump",
-		            "-noijk",
-		            "-o", txt_path,
-		            roi_path,
-		            id_path_full
-		          ]
-
-		fmri_tools.utils.run_cmd( " ".join( xtr_cmd ) )
+		fmri_tools.utils.run_cmd( " ".join( cmd ) )
