@@ -78,10 +78,13 @@ def _get_loc_paths( conf, paths ):
 
 	loc.glm = loc.base + ( file_base + "glm" )
 	loc.beta = loc.base + ( file_base + "beta" )
+	loc.mask = loc.base + ( file_base + "mask" )
 
 	loc.sig = loc.base + ( file_base + "sig" )
+	loc.all_patch_id = loc.base + ( file_base + "all_patch_id" )
 	loc.patch_id = loc.base + ( file_base + "patch_id" )
 	loc.sig_sum = loc.base + ( file_base + "sig_sum" )
+	loc.vl = loc.base + ( file_base + "vis_loc_rois" )
 
 	loc.timing_base = ( loc.base /
 	                    "timing" +
@@ -114,6 +117,8 @@ def _get_ana_paths( conf, paths ):
 
 	ana.vl = ana.base + ( file_base + "vis_loc_rois" )
 	ana.mask = ana.base + ( file_base + "mask" )
+
+	ana.patch_resp = ana.base + ( file_base + "patch_resp" )
 
 	return ana
 

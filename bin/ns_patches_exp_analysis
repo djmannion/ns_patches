@@ -38,7 +38,9 @@ def main():
 	                   )
 
 	proc_steps = ( "glm",
-	               "",
+	               "beta_to_psc",
+	               "patch_dump",
+	               "image_resp"
 	             )
 
 	parser.add_argument( "proc_step",
@@ -72,9 +74,14 @@ def main():
 	if args.proc_step == "glm":
 		ns_patches.analysis.analysis.glm( conf, paths )
 
-	elif args.proc_step == "patch_id":
-		ns_patches.analysis.loc_analysis.patch_id( conf, paths )
+	elif args.proc_step == "beta_to_psc":
+		ns_patches.analysis.analysis.beta_to_psc( conf, paths )
 
+	elif args.proc_step == "patch_dump":
+		ns_patches.analysis.analysis.patch_dump( conf, paths )
+
+	elif args.proc_step == "image_resp":
+		ns_patches.analysis.analysis.image_resp( conf, paths )
 
 	else:
 		print "Not implemented"
