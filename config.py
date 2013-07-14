@@ -85,7 +85,10 @@ def _get_ana_conf():
 
 	ana_conf = ConfigContainer()
 
+#	ana_conf
+
 	return ana_conf
+
 
 def _get_acq_conf():
 	"""Get the acquisition configuration"""
