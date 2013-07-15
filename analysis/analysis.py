@@ -12,6 +12,7 @@ import ns_patches.config, ns_patches.paths
 
 
 def _get_timing( conf, paths ):
+	"Calculate the timing of each regressor in each run"
 
 	timing = []
 
@@ -68,8 +69,6 @@ def _get_timing( conf, paths ):
 			regress_num += 1
 
 	return regress
-
-
 
 
 def glm( conf, paths ):
@@ -238,8 +237,10 @@ def patch_dump( conf, paths ):
 
 		fmri_tools.utils.run_cmd( " ".join( cmd ) )
 
+		# we want to combine across hemispheres, so load the result
 		resp.append( np.loadtxt( resp_path ) )
 
+	# combine across hemispheres
 	resp = np.vstack( resp )
 
 	resp_path = paths.ana.patch_resp.full( ".txt" )
@@ -248,6 +249,7 @@ def patch_dump( conf, paths ):
 
 
 def _load_run_log( run_num, paths ):
+	"Loads the log file for a particular subject and run"
 
 	# load the run log file
 	run_ext = "{r:02d}_log.npz".format( r = run_num )
@@ -343,11 +345,3 @@ def image_resp( conf, paths ):
 	assert np.sum( np.isnan( img_resp ) ) == 0
 
 	return img_resp
-
-
-
-
-
-
-
-
