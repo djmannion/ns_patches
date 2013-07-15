@@ -72,9 +72,9 @@ def _get_loc_paths( conf, paths ):
 	subj_id = conf.subj.subj_id
 	exp_id = conf.exp.id
 
-	file_base = "{subj_id:s}_{exp_id:s}_loc-".format( subj_id = subj_id,
-	                                                  exp_id = exp_id
-	                                                )
+	file_base = "{subj_id:s}_{exp_id:s}-".format( subj_id = subj_id,
+	                                              exp_id = exp_id
+	                                            )
 
 	loc.glm = loc.base + ( file_base + "glm" )
 	loc.beta = loc.base + ( file_base + "beta" )
