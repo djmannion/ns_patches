@@ -72,6 +72,9 @@ def run( run_num ):
 	wait_text.draw()
 	win.flip()
 
+	win.getMovieFrame()
+	win.saveMovieFrames( "caps/loc.png" )
+
 	keys = psychopy.event.waitKeys()
 
 	_ = [ fixation.draw() for fixation in fix_stim ]
