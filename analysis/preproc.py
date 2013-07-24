@@ -84,30 +84,6 @@ def st_correct( conf, paths ):
 		                               )
 
 
-def mot_correct( conf, paths ):
-	"""Performs motion correction"""
-
-	logger = logging.getLogger( __name__ )
-	logger.info( "Running motion correction..." )
-
-	st_paths = [ st_path.full( ".nii" ) for st_path in paths.func.sts ]
-	corr_paths = [ corr_path.full( ".nii" ) for corr_path in paths.func.corrs ]
-
-	# `mot_base` is one-based in the config
-	i_base = conf.subj.mot_base - 1
-	base_path = paths.func.sts[ i_base ].full( ".nii[0]" )
-
-	fmri_tools.preproc.mot_correct( orig_paths = st_paths,
-	                                corr_paths = corr_paths,
-	                                base_path = base_path,
-	                                mc_path = paths.summ.motion.full( ".txt" ),
-	                              )
-
-	# make a summary image from the corrected files
-	fmri_tools.preproc.gen_sess_summ_img( epi_paths = corr_paths,
-	                                      out_path = paths.summ.corr.full()
-	                                    )
-
 
 def fieldmaps( conf, paths ):
 	"""Prepare the fieldmaps"""
@@ -143,45 +119,41 @@ def fieldmaps( conf, paths ):
 	                                  strip_mag = True #False
 	                                )
 
-
-def unwarp( conf, paths ):
-	"""Uses the fieldmaps to unwarp the functional images and create a mean image
-	of all the unwarped functional images.
-	"""
+def mc_unwarp( conf, paths ):
+	"""Combined motion and distortion correction"""
 
 	logger = logging.getLogger( __name__ )
-	logger.info( "Running distortion correction..." )
+	logger.info( "Running motion and distortion correction..." )
 
-	# apply a median filter to the fieldmap
+	st_paths = [ st_path.full() for st_path in paths.func.sts ]
+	corr_paths = [ corr_path.full() for corr_path in paths.func.corrs ]
+	uw_paths = [ uw_path.full() for uw_path in paths.func.uws ]
+
+	i_run_base = conf.subj.mot_base - 1
 	fugue_params = [ "--median" ]
+	i_vol_base = 83
+	dwell_ms = conf.acq.dwell_ms
+	uw_direction_fsl = conf.acq.ph_enc_dir
+	uw_direction_afni = "LR"
+	fmap_path = paths.fmap.fmap.full()
 
-	# add a mask to the unwarp output
-	applywarp_params = [ "--mask=" + paths.fmap.mag.full( "-rs-mask" ) ]
+	fmri_tools.preproc.mc_unwarp( orig_paths = st_paths,
+	                              corr_paths = corr_paths,
+	                              uw_paths = uw_paths,
+	                              fmap_path = fmap_path,
+	                              dwell_ms = dwell_ms,
+	                              uw_direction_fsl = uw_direction_fsl,
+	                              uw_direction_afni = uw_direction_afni,
+	                              voxel_size = "1.0",
+	                              i_vol_base = i_vol_base,
+	                              i_run_base = i_run_base,
+	                              fugue_params = fugue_params
+	                            )
 
-	for ( corr_path, uw_path, shift_path, warp_path ) in zip( paths.func.corrs,
-	                                                          paths.func.uws,
-	                                                          paths.func.shifts,
-	                                                          paths.func.warps
-	                                                        ):
+	fmri_tools.preproc.gen_sess_summ_img( epi_paths = uw_paths,
+	                                      out_path = paths.summ.uw.full()
+	                                    )
 
-		fmri_tools.preproc.unwarp( epi_path = corr_path.full(),
-		                           fmap_path = paths.fmap.fmap.full(),
-		                           uw_path = uw_path.full(),
-		                           dwell_ms = conf.acq.dwell_ms,
-		                           uw_direction = conf.acq.ph_enc_dir,
-		                           fugue_params = fugue_params,
-		                           shift_path = shift_path,
-		                           warp_path = warp_path,
-		                           applywarp_params = applywarp_params
-		                         )
-
-	uw_files = [ uw.full() for uw in paths.func.uws ]
-
-	# produce a summary image
-	fmri_tools.preproc.gen_sess_summ_img( uw_files, paths.summ.uw.full() )
-
-	# create a mean image of the unwarped data
-	fmri_tools.preproc.mean_image( uw_files, paths.summ.mean.full() )
 
 
 def sess_reg( conf, paths ):
