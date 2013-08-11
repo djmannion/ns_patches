@@ -1,0 +1,15 @@
+#!/usr/bin/env python2
+
+# red button to go to next image, blue button to show full image
+
+import ns_patches.config
+import ns_patches.prepare.prepare_images
+
+if __name__ == "__main__":
+
+	mon = ns_patches.config._get_acq_conf().monitor_name
+
+	ns_patches.prepare.prepare_images.img_browser( save_changes = False,
+	                                               mon_name = mon,
+	                                               shuffle = True
+	                                             )
