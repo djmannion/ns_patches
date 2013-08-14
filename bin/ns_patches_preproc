@@ -44,10 +44,8 @@ def main():
 
 	preproc_steps = ( "convert",
 	                  "st_correct",
-	                  "mc_unwarp",
-	                  "mot_correct",
 	                  "fieldmap",
-	                  "undistort",
+	                  "mc_unwarp",
 	                  "sess_reg",
 	                  "vol_to_surf"
 	                )
@@ -85,17 +83,11 @@ def main():
 	elif args.preproc_step == "st_correct":
 		ns_patches.analysis.preproc.st_correct( conf, paths )
 
-	elif args.preproc_step == "mot_correct":
-		ns_patches.analysis.preproc.mot_correct( conf, paths )
-
 	elif args.preproc_step == "mc_unwarp":
 		ns_patches.analysis.preproc.mc_unwarp( conf, paths )
 
 	elif args.preproc_step == "fieldmap":
 		ns_patches.analysis.preproc.fieldmaps( conf, paths )
-
-	elif args.preproc_step == "undistort":
-		ns_patches.analysis.preproc.unwarp( conf, paths )
 
 	elif args.preproc_step == "sess_reg":
 		ns_patches.analysis.preproc.sess_reg( conf, paths )

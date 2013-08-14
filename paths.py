@@ -49,6 +49,10 @@ def get_subj_paths( conf ):
 	                   for orig in paths.func.origs
 	                 ]
 
+	paths.summ.st = ( paths.summ.orig +
+	                  paths.summ.orig.file().replace( "orig", "st" )
+	                )
+
 	paths.logs = _get_log_paths( conf, paths )
 
 	if conf.subj.is_loc:

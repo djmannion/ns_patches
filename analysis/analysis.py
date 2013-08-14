@@ -142,6 +142,18 @@ def glm( conf, paths ):
 			                ]
 			              )
 
+		con_str = ( "SYM: " +
+		            " ".join( [ "+r{x:s}".format( x = x )
+		                        for x in regressors[ 0 ]
+		                      ]
+		                    )
+		          )
+
+		glm_cmd.extend( [ "-gltsym", "'" + con_str + "'",
+		                  "-glt_label", "1", "all"
+		                ]
+		              )
+
 		# run this first GLM
 		fmri_tools.utils.run_cmd( " ".join( glm_cmd ) )
 

@@ -83,6 +83,13 @@ def st_correct( conf, paths ):
 		                                 reorient_str = conf.acq.ras
 		                               )
 
+	# files to go into the summary
+	summ_paths = [ st.full() for st in paths.func.sts ]
+
+	# make a summary image from the files
+	fmri_tools.preproc.gen_sess_summ_img( epi_paths = summ_paths,
+	                                      out_path = paths.summ.st.full(),
+	                                    )
 
 
 def fieldmaps( conf, paths ):
@@ -91,13 +98,14 @@ def fieldmaps( conf, paths ):
 	logger = logging.getLogger( __name__ )
 	logger.info( "Running fieldmap preparation..." )
 
+	epi_run = conf.subj.mot_base - 1
+
 	# set a corrected EPI to define the space to resample to
-	ref_epi = paths.func.corrs[ 0 ].full( ".nii[0]" )
+	ref_epi = paths.func.sts[ epi_run ].full( ".nii[0]" )
 
 	# want to calculate a coarse brain mask from the epi
 	mask_path = paths.fmap.mask.full( ".nii" )
-	epi_run = conf.subj.mot_base - 1
-	epi_path = paths.summ.corr.full( ".nii[{n:d}]".format( n = epi_run ) )
+	epi_path = paths.summ.st.full( ".nii[{n:d}]".format( n = epi_run ) )
 
 	mask_cmd = [ "3dAutomask",
 	             "-SI", "{n:d}".format( n = conf.subj.mask_SI ),
@@ -131,7 +139,7 @@ def mc_unwarp( conf, paths ):
 
 	i_run_base = conf.subj.mot_base - 1
 	fugue_params = [ "--median" ]
-	i_vol_base = 83
+	i_vol_base = conf.subj.vol_base
 	dwell_ms = conf.acq.dwell_ms
 	uw_direction_fsl = conf.acq.ph_enc_dir
 	uw_direction_afni = "LR"
@@ -154,6 +162,7 @@ def mc_unwarp( conf, paths ):
 	                                      out_path = paths.summ.uw.full()
 	                                    )
 
+	fmri_tools.preproc.mean_image( uw_paths, paths.summ.mean.full() )
 
 
 def sess_reg( conf, paths ):
