@@ -408,16 +408,17 @@ def _get_subj_conf( subj_id = None ):
 
 	s1000.subj_id = "s1000"
 	s1000.fs_subj_id = "s1000"
-	s1000.acq_date = ""
+	s1000.acq_date = "20130813"
 	s1000.comments = ""
-	s1000.n_runs = 10
-	s1000.mot_base = 6
+	s1000.n_runs = 8
+	s1000.mot_base = 5
+	s1000.vol_base = 108
 	s1000.is_loc = False
-	s1000.mask_SI = 80
+	s1000.mask_SI = 90
 
-	s1000.extra_al_params = [ "-parang", "1", "-10", "0",
-	                          "-parang", "2", "16", "26",
-	                          "-parang", "3", "10", "20",
+	s1000.extra_al_params = [ "-parang", "1", "-12", "-2",
+	                          "-parang", "2", "14", "24",
+	                          "-parang", "3", "20", "37",
 	                          "-maxrot", "10",
 	                          "-source_automask+2",
 	                          "-nocmass"
@@ -431,16 +432,17 @@ def _get_subj_conf( subj_id = None ):
 
 	s1000_loc.subj_id = "s1000_loc"
 	s1000_loc.fs_subj_id = "s1000"
-	s1000_loc.acq_date = "20130620"
+	s1000_loc.acq_date = "20130812"
 	s1000_loc.comments = ""
 	s1000_loc.n_runs = 6
 	s1000_loc.mot_base = 4
+	s1000_loc.vol_base = 83
 	s1000_loc.is_loc = True
-	s1000_loc.mask_SI = 75
+	s1000_loc.mask_SI = 85
 
-	s1000_loc.extra_al_params = [ "-parang", "1", "-13", "-3",
-	                              "-parang", "2", "16", "26",
-	                              "-parang", "3", "6", "16",
+	s1000_loc.extra_al_params = [ "-parang", "1", "-4", "6",
+	                              "-parang", "2", "14", "24",
+	                              "-parang", "3", "15", "32",
 	                              "-maxrot", "10",
 	                              "-source_automask+2",
 	                              "-nocmass"
@@ -450,10 +452,58 @@ def _get_subj_conf( subj_id = None ):
 	                     "rh" : 131151
 	                   }
 
+	s1021_loc = ConfigContainer()
+
+	s1021_loc.subj_id = "s1021_loc"
+	s1021_loc.fs_subj_id = "s1021"
+	s1021_loc.acq_date = "20130812"
+	s1021_loc.comments = ""
+	s1021_loc.n_runs = 6
+	s1021_loc.mot_base = 4
+	s1021_loc.vol_base = 83
+	s1021_loc.is_loc = True
+	s1021_loc.mask_SI = 75
+
+	s1021_loc.extra_al_params = [ "-parang", "1", "-5", "5",
+	                              "-parang", "2", "11", "21",
+	                              "-parang", "3", "46", "62",
+	                              "-maxrot", "10",
+	                              "-source_automask+2",
+	                              "-nocmass"
+	                            ]
+
+	s1021_loc.node_k = { "lh" : 140847,
+	                     "rh" : 141381
+	                   }
+
+	s1021 = ConfigContainer()
+
+	s1021.subj_id = "s1021"
+	s1021.fs_subj_id = "s1021"
+	s1021.acq_date = "20130813"
+	s1021.comments = ""
+	s1021.n_runs = 8
+	s1021.mot_base = 5
+	s1021.vol_base = 108
+	s1021.is_loc = False
+	s1021.mask_SI = 75
+
+	s1021.extra_al_params = [ "-parang", "1", "-8", "2",
+	                          "-parang", "2", "13", "23",
+	                          "-parang", "3", "46", "56",
+	                          "-maxrot", "10",
+	                          "-source_automask+2",
+	                          "-nocmass"
+	                        ]
+
+	s1021.node_k = { "lh" : 140847,
+	                 "rh" : 141381
+	               }
 
 	subj = ConfigContainer()
 
-	subj.subj = { "s1000" : s1000, "s1000_loc" : s1000_loc
+	subj.subj = { "s1000" : s1000, "s1000_loc" : s1000_loc,
+	              "s1021" : s1021, "s1021_loc" : s1021_loc
 	            }
 
 	if subj_id is None:
