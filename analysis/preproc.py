@@ -124,7 +124,7 @@ def fieldmaps( conf, paths ):
 	                                  recentre_ph = "mean",
 	                                  recentre_mask = mask_path,
 	                                  strip_params = [ "-surface_coil" ],
-	                                  strip_mag = True #False
+	                                  strip_mag = False
 	                                )
 
 def mc_unwarp( conf, paths ):

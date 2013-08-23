@@ -500,10 +500,60 @@ def _get_subj_conf( subj_id = None ):
 	                 "rh" : 141381
 	               }
 
+	s1008_loc = ConfigContainer()
+
+	s1008_loc.subj_id = "s1008_loc"
+	s1008_loc.fs_subj_id = "s1008"
+	s1008_loc.acq_date = "20130822"
+	s1008_loc.comments = ""
+	s1008_loc.n_runs = 6
+	s1008_loc.mot_base = 4
+	s1008_loc.vol_base = 83
+	s1008_loc.is_loc = True
+	s1008_loc.mask_SI = 100
+
+	s1008_loc.extra_al_params = [ "-parang", "1", "-5", "7",
+	                              "-parang", "2", "9", "19",
+	                              "-parang", "3", "6", "16",
+	                              "-maxrot", "10",
+	                              "-source_automask+2",
+	                              "-nocmass"
+	                            ]
+
+	s1008_loc.node_k = { "lh" : 140427,
+	                     "rh" : 141898
+	                   }
+
+	s1023_loc = ConfigContainer()
+
+	s1023_loc.subj_id = "s1023_loc"
+	s1023_loc.fs_subj_id = "s1023"
+	s1023_loc.acq_date = "20130822"
+	s1023_loc.comments = ""
+	s1023_loc.n_runs = 6
+	s1023_loc.mot_base = 4
+	s1023_loc.vol_base = 83
+	s1023_loc.is_loc = True
+	s1023_loc.mask_SI = 95
+
+	s1023_loc.extra_al_params = [ "-parang", "1", "-5", "5",
+	                              "-parang", "2", "11", "21",
+	                              "-parang", "3", "46", "62",
+	                              "-maxrot", "10",
+	                              "-source_automask+2",
+	                              "-nocmass"
+	                            ]
+
+	s1023_loc.node_k = { "lh" : 140427,
+	                     "rh" : 141898
+	                   }
+
 	subj = ConfigContainer()
 
 	subj.subj = { "s1000" : s1000, "s1000_loc" : s1000_loc,
-	              "s1021" : s1021, "s1021_loc" : s1021_loc
+	              "s1021" : s1021, "s1021_loc" : s1021_loc,
+	              "s1008_loc" : s1008_loc,
+	              "s1023_loc" : s1023_loc
 	            }
 
 	if subj_id is None:
