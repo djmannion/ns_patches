@@ -500,6 +500,31 @@ def _get_subj_conf( subj_id = None ):
 	                 "rh" : 141381
 	               }
 
+	s1008 = ConfigContainer()
+
+	s1008.subj_id = "s1008"
+	s1008.fs_subj_id = "s1008"
+	s1008.acq_date = "20130823"
+	s1008.comments = ""
+	s1008.n_runs = 8
+	s1008.mot_base = 5
+	s1008.vol_base = 108
+	s1008.is_loc = False
+	s1008.mask_SI = 100
+
+	s1008.extra_al_params = [ "-parang", "1", "-5", "5",
+	                          "-parang", "2", "5", "15",
+	                          "-parang", "3", "6", "17",
+	                          "-maxrot", "10",
+	                          "-source_automask+2",
+	                          "-nocmass"
+	                        ]
+
+	s1008.node_k = { "lh" : 140427,
+	                 "rh" : 141898
+	               }
+
+
 	s1008_loc = ConfigContainer()
 
 	s1008_loc.subj_id = "s1008_loc"
@@ -523,6 +548,30 @@ def _get_subj_conf( subj_id = None ):
 	s1008_loc.node_k = { "lh" : 140427,
 	                     "rh" : 141898
 	                   }
+
+	s1023 = ConfigContainer()
+
+	s1023.subj_id = "s1023"
+	s1023.fs_subj_id = "s1023"
+	s1023.acq_date = "20130823"
+	s1023.comments = ""
+	s1023.n_runs = 10
+	s1023.mot_base = 5
+	s1023.vol_base = 108
+	s1023.is_loc = False
+	s1023.mask_SI = 95
+
+	s1023.extra_al_params = [ "-parang", "1", "-5", "5",
+	                          "-parang", "2", "11", "21",
+	                          "-parang", "3", "46", "62",
+	                          "-maxrot", "10",
+	                          "-source_automask+2",
+	                          "-nocmass"
+	                        ]
+
+	s1023.node_k = { "lh" : 140427,
+	                 "rh" : 141898
+	               }
 
 	s1023_loc = ConfigContainer()
 
@@ -552,8 +601,8 @@ def _get_subj_conf( subj_id = None ):
 
 	subj.subj = { "s1000" : s1000, "s1000_loc" : s1000_loc,
 	              "s1021" : s1021, "s1021_loc" : s1021_loc,
-	              "s1008_loc" : s1008_loc,
-	              "s1023_loc" : s1023_loc
+	              "s1008" : s1008, "s1008_loc" : s1008_loc,
+	              "s1023" : s1023, "s1023_loc" : s1023_loc
 	            }
 
 	if subj_id is None:
