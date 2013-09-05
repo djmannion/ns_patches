@@ -597,12 +597,110 @@ def _get_subj_conf( subj_id = None ):
 	                     "rh" : 141898
 	                   }
 
+	s1011 = ConfigContainer()
+
+	s1011.subj_id = "s1011"
+	s1011.fs_subj_id = "s1011"
+	s1011.acq_date = "20130828"
+	s1011.comments = ""
+	s1011.n_runs = 8
+	s1011.mot_base = 5
+	s1011.vol_base = 108
+	s1011.is_loc = False
+	s1011.mask_SI = 100
+
+	s1011.extra_al_params = [ "-parang", "1", "-5", "9",
+	                          "-parang", "2", "4", "14",
+	                          "-parang", "3", "10", "20",
+	                          "-maxrot", "10",
+	                          "-source_automask+2",
+	                          "-nocmass"
+	                        ]
+
+	s1011.node_k = { "lh" : 128434,
+	                 "rh" : 128461
+	               }
+
+	s1011_loc = ConfigContainer()
+
+	s1011_loc.subj_id = "s1011_loc"
+	s1011_loc.fs_subj_id = "s1011"
+	s1011_loc.acq_date = "20130827"
+	s1011_loc.comments = ""
+	s1011_loc.n_runs = 6
+	s1011_loc.mot_base = 4
+	s1011_loc.vol_base = 83
+	s1011_loc.is_loc = True
+	s1011_loc.mask_SI = 100
+
+	s1011_loc.extra_al_params = [ "-parang", "1", "0", "13",
+	                              "-parang", "2", "5", "15",
+	                              "-parang", "3", "11", "17",
+	                              "-maxrot", "10",
+	                              "-source_automask+2",
+	                              "-nocmass"
+	                            ]
+
+	s1011_loc.node_k = { "lh" : 128434,
+	                     "rh" : 128461
+	                   }
+
+	s1048 = ConfigContainer()
+
+	s1048.subj_id = "s1048"
+	s1048.fs_subj_id = "s1048"
+	s1048.acq_date = "20130829"
+	s1048.comments = ""
+	s1048.n_runs = 8
+	s1048.mot_base = 5
+	s1048.vol_base = 108
+	s1048.is_loc = False
+	s1048.mask_SI = 100
+
+	s1048.extra_al_params = [ "-parang", "1", "-9", "5",
+	                          "-parang", "2", "5", "15",
+	                          "-parang", "3", "20", "34",
+	                          "-maxrot", "10",
+	                          "-source_automask+2",
+	                          "-nocmass"
+	                        ]
+
+	s1048.node_k = { "lh" : 141613,
+	                 "rh" : 141576
+	               }
+
+	s1048_loc = ConfigContainer()
+
+	s1048_loc.subj_id = "s1048_loc"
+	s1048_loc.fs_subj_id = "s1048"
+	s1048_loc.acq_date = "20130828"
+	s1048_loc.comments = ""
+	s1048_loc.n_runs = 6
+	s1048_loc.mot_base = 4
+	s1048_loc.vol_base = 83
+	s1048_loc.is_loc = True
+	s1048_loc.mask_SI = 100
+
+	s1048_loc.extra_al_params = [ "-parang", "1", "-9", "5",
+	                              "-parang", "2", "5", "18",
+	                              "-parang", "3", "29", "41",
+	                              "-maxrot", "10",
+	                              "-source_automask+2",
+	                              "-nocmass"
+	                            ]
+
+	s1048_loc.node_k = { "lh" : 141613,
+	                     "rh" : 141576
+	                   }
+
 	subj = ConfigContainer()
 
 	subj.subj = { "s1000" : s1000, "s1000_loc" : s1000_loc,
 	              "s1021" : s1021, "s1021_loc" : s1021_loc,
 	              "s1008" : s1008, "s1008_loc" : s1008_loc,
-	              "s1023" : s1023, "s1023_loc" : s1023_loc
+	              "s1023" : s1023, "s1023_loc" : s1023_loc,
+	              "s1011" : s1011, "s1011_loc" : s1011_loc,
+	              "s1048" : s1048, "s1048_loc" : s1048_loc
 	            }
 
 	if subj_id is None:
