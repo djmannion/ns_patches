@@ -25,12 +25,21 @@ def reg_coeff_t( conf, paths ):
 		reg_coef[ i_subj, : ] = subj_coef
 
 	# slope t-test
-	( slope_t, slope_p ) = scipy.stats.ttest_1samp( a = reg_coeff[ :, 0 ],
+	( slope_t, slope_p ) = scipy.stats.ttest_1samp( a = reg_coef[ :, 0 ],
 	                                                popmean = 1.0
 	                                              )
+
+	np.savetxt( paths.slope_t_p.full( ".txt" ),
+	            [ slope_t, slope_p ]
+	          )
 
 	# intercept t-test
 	( intrcpt_t, intrcpt_p ) = scipy.stats.ttest_1samp( a = reg_coef[ :, 1 ],
 	                                                    popmean = 0.0 )
 
-	return reg_coef
+	np.savetxt( paths.intercept_t_p.full( ".txt" ),
+	            [ intrcpt_t, intrcpt_p ]
+	          )
+
+
+	

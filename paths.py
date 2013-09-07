@@ -183,7 +183,8 @@ def get_group_paths( conf ):
 
 	grp.regress_coef = grp.base + ( file_base + "-regress_coef" )
 
-	grp.regress_t = grp.base + ( file_base + "-regress_t" )
+	grp.slope_t_p = grp.base + ( file_base + "-slope_t_p" )
+	grp.intercept_t_p = grp.base + ( file_base + "-intercept_t_p" )
 
 	return grp
 
