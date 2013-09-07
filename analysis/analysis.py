@@ -357,5 +357,44 @@ def image_resp( conf, paths ):
 
 	assert np.sum( np.isnan( img_resp ) ) == 0
 
-	return img_resp
+	np.save( paths.ana.img_resp.full( ".npy" ), img_resp )
+
+
+
+def vec_resp( conf, paths ):
+
+	# is 26 x 20 x 8 x 2
+	img_resp = np.load( paths.ana.img_resp.full( ".npy" ) )
+
+	# average over runs
+	img_resp = np.mean( img_resp, axis = 2 )
+
+	# concatenate patches and images
+	img_resp = np.vstack( [ img_resp[ ..., 0 ].flatten(),
+	                        img_resp[ ..., 1 ].flatten()
+	                      ]
+	                    )
+
+	assert img_resp.shape[ 0 ] == 2
+
+	img_resp = img_resp.T
+
+	np.savetxt( paths.ana.vec_resp.full( ".txt" ), img_resp )
+
+
+def subj_regress( conf, paths ):
+
+	vec_resp = np.loadtxt( paths.ana.vec_resp.full( ".txt" ) )
+
+	reg_coef = scipy.stats.linregress( vec_resp[ :, 0 ],
+	                                   vec_resp[ :, 1 ]
+	                                 )[ :2 ]
+
+	np.savetxt( paths.ana.regress.full( ".txt" ), reg_coef )
+
+
+
+
+
+
 

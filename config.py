@@ -16,7 +16,7 @@ class ConfigContainer( object ):
 	pass
 
 
-def get_conf( subj_id = None ):
+def get_conf( subj_id = None, no_loc = False ):
 
 	conf = ConfigContainer()
 
@@ -25,7 +25,7 @@ def get_conf( subj_id = None ):
 	conf.exp = _get_exp_conf( conf )
 	conf.loc = _get_loc_conf( conf )
 	conf.ana = _get_ana_conf()
-	conf.all_subj = _get_subj_conf()
+	conf.all_subj = _get_subj_conf( None, no_loc)
 
 	if subj_id is not None:
 		conf.subj = _get_subj_conf( subj_id )
@@ -401,7 +401,7 @@ def gen_exp_patch_timing( conf ):
 	return design
 
 
-def _get_subj_conf( subj_id = None ):
+def _get_subj_conf( subj_id = None, no_loc = False ):
 
 	s1000 = ConfigContainer()
 
@@ -721,11 +721,14 @@ def _get_subj_conf( subj_id = None ):
 	subj.subj = { "s1000" : s1000, "s1000_loc" : s1000_loc,
 	              "s1021" : s1021, "s1021_loc" : s1021_loc,
 	              "s1008" : s1008, "s1008_loc" : s1008_loc,
-	              "s1023" : s1023, "s1023_loc" : s1023_loc,
+#	              "s1023" : s1023, "s1023_loc" : s1023_loc,
 	              "s1011" : s1011, "s1011_loc" : s1011_loc,
 	              "s1048" : s1048, "s1048_loc" : s1048_loc,
-	              "s1046_loc" : s1046_loc
+#	              "s1046_loc" : s1046_loc
 	            }
+
+	if no_loc:
+		subj.subj = { x : subj.subj[ x ] for x in subj.subj if not "loc" in x }
 
 	if subj_id is None:
 		return subj

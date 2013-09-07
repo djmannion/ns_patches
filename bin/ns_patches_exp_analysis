@@ -40,7 +40,9 @@ def main():
 	proc_steps = ( "glm",
 	               "beta_to_psc",
 	               "patch_dump",
-	               "image_resp"
+	               "image_resp",
+	               "vec_resp",
+	               "subj_regress"
 	             )
 
 	parser.add_argument( "proc_step",
@@ -82,6 +84,12 @@ def main():
 
 	elif args.proc_step == "image_resp":
 		ns_patches.analysis.analysis.image_resp( conf, paths )
+
+	elif args.proc_step == "vec_resp":
+		ns_patches.analysis.analysis.vec_resp( conf, paths )
+
+	elif args.proc_step == "subj_regress":
+		ns_patches.analysis.analysis.subj_regress( conf, paths )
 
 	else:
 		print "Not implemented"
