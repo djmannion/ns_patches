@@ -124,6 +124,12 @@ def _get_ana_paths( conf, paths ):
 
 	ana.patch_resp = ana.base + ( file_base + "patch_resp" )
 
+	ana.img_resp = ana.base + ( file_base + "img_resp" )
+
+	ana.vec_resp = ana.base + ( file_base + "vec_resp" )
+
+	ana.regress = ana.base + ( file_base + "regress_coef" )
+
 	return ana
 
 
@@ -165,4 +171,22 @@ def _get_log_paths( conf, paths ):
 	logs.run_log_base = logs.base + ( subj_id + "_ns_patches-run_" )
 
 	return logs
+
+
+def get_group_paths( conf ):
+
+	grp = fmri_tools.paths.PathsHandler()
+
+	grp.base = fmri_tools.paths.Path( "/labs/olmanlab/Data7T/NatScenePatches/group_data" )
+
+	file_base = "ns_patches"
+
+	grp.regress_coef = grp.base + ( file_base + "-regress_coef" )
+
+	grp.regress_t = grp.base + ( file_base + "-regress_t" )
+
+	return grp
+
+
+
 
