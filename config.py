@@ -693,6 +693,30 @@ def _get_subj_conf( subj_id = None ):
 	                     "rh" : 141576
 	                   }
 
+	s1046_loc = ConfigContainer()
+
+	s1046_loc.subj_id = "s1046_loc"
+	s1046_loc.fs_subj_id = "s1046"
+	s1046_loc.acq_date = "20130906"
+	s1046_loc.comments = ""
+	s1046_loc.n_runs = 6
+	s1046_loc.mot_base = 4
+	s1046_loc.vol_base = 83
+	s1046_loc.is_loc = True
+	s1046_loc.mask_SI = 100
+
+	s1046_loc.extra_al_params = [ "-parang", "1", "-3", "7",
+	                              "-parang", "2", "24", "34",
+	                              "-parang", "3", "1", "11",
+	                              "-maxrot", "10",
+	                              "-source_automask+2",
+	                              "-nocmass"
+	                            ]
+
+	s1046_loc.node_k = { "lh" : 127459,
+	                     "rh" : 125182
+	                   }
+
 	subj = ConfigContainer()
 
 	subj.subj = { "s1000" : s1000, "s1000_loc" : s1000_loc,
@@ -700,7 +724,8 @@ def _get_subj_conf( subj_id = None ):
 	              "s1008" : s1008, "s1008_loc" : s1008_loc,
 	              "s1023" : s1023, "s1023_loc" : s1023_loc,
 	              "s1011" : s1011, "s1011_loc" : s1011_loc,
-	              "s1048" : s1048, "s1048_loc" : s1048_loc
+	              "s1048" : s1048, "s1048_loc" : s1048_loc,
+	              "s1046_loc" : s1046_loc
 	            }
 
 	if subj_id is None:
