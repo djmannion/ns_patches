@@ -180,3 +180,4 @@ def patch_id( conf, paths ):
 		      ]
 
 		fmri_tools.utils.run_cmd( " ".join( cmd ) )
+
