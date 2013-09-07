@@ -139,7 +139,6 @@ def _get_roi_paths( conf, paths ):
 
 	file_base = "{subj_id:s}_{exp_id:s}-".format( subj_id = subj_id, exp_id = exp_id )
 
-
 	roi.rois = roi.base + ( file_base + "rois" )
 
 	roi.psc = roi.base + ( file_base + "psc" )
@@ -167,17 +166,3 @@ def _get_log_paths( conf, paths ):
 
 	return logs
 
-
-
-def get_group_paths( conf ):
-	"""Get the path structure for the group analysis"""
-
-	grp = fmri_tools.paths.PathsHandler()
-
-	grp.base = fmri_tools.paths.Path( "/labs/olmanlab/Data7T/Diamond/djm/group_data" )
-
-	grp.log = grp.base + "diamond-log.log"
-
-	grp.task_anova = grp.base + "diamond-task"
-
-	return grp
