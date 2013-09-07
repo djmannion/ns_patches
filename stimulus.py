@@ -108,3 +108,4 @@ def get_fixation( win, conf ):
 	fix_stim.append( fixation )
 
 	return fix_stim
+

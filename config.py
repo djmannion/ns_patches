@@ -1,3 +1,4 @@
+"Configuration file for the natural scenes patches fMRI study"
 
 import os.path
 import csv
@@ -11,6 +12,7 @@ import ns_patches.paths
 
 
 class ConfigContainer( object ):
+
 	pass
 
 
@@ -85,13 +87,10 @@ def _get_ana_conf():
 
 	ana_conf = ConfigContainer()
 
-#	ana_conf
-
 	return ana_conf
 
 
 def _get_acq_conf():
-	"""Get the acquisition configuration"""
 
 	acq_conf = ConfigContainer()
 
@@ -569,8 +568,8 @@ def _get_subj_conf( subj_id = None ):
 	                          "-nocmass"
 	                        ]
 
-	s1023.node_k = { "lh" : 140427,
-	                 "rh" : 141898
+	s1023.node_k = { "lh" : 0,
+	                 "rh" : 0
 	               }
 
 	s1023_loc = ConfigContainer()
@@ -593,8 +592,8 @@ def _get_subj_conf( subj_id = None ):
 	                              "-nocmass"
 	                            ]
 
-	s1023_loc.node_k = { "lh" : 140427,
-	                     "rh" : 141898
+	s1023_loc.node_k = { "lh" : 0,
+	                     "rh" : 0
 	                   }
 
 	s1011 = ConfigContainer()

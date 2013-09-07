@@ -319,6 +319,7 @@ def image_resp( conf, paths ):
 
 		assert img_trials.shape[ 0 ] == conf.exp.n_mod_patches
 
+		# find the coherent image for each trial
 		i_coh_img = scipy.stats.mode( img_trials, axis = 0 )[ 0 ][ 0 ]
 
 		i_run_offset = ( run_num - 1 ) * conf.exp.n_trials
@@ -357,3 +358,4 @@ def image_resp( conf, paths ):
 	assert np.sum( np.isnan( img_resp ) ) == 0
 
 	return img_resp
+
