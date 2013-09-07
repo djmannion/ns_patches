@@ -71,9 +71,9 @@ for run_num in np.arange( args.start, args.end + 1 ):
 	                                                                                    m = args.monitor
 	                                                                                  )
 
-	exit_status = ns_patches.exp.exp.run( args.subj_id, run_num, mon_name =
-args.monitor )
+	exit_status = ns_patches.exp.exp.run( args.subj_id, run_num, mon_name = args.monitor )
 
 	if exit_status == 1:
 		print "Aborting sequence"
 		sys.exit( exit_status )
+

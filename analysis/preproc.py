@@ -1,8 +1,3 @@
-"""
-Set of routines to pre-process the fMRI data for the diamond
- fMRI experiment.
-"""
-
 from __future__ import division
 
 import os, os.path
@@ -127,6 +122,7 @@ def fieldmaps( conf, paths ):
 	                                  strip_mag = False
 	                                )
 
+
 def mc_unwarp( conf, paths ):
 	"""Combined motion and distortion correction"""
 
@@ -236,3 +232,4 @@ def vol_to_surf( conf, paths ):
 			                               )
 
 	os.chdir( start_dir )
+
