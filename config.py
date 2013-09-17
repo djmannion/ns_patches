@@ -560,16 +560,16 @@ def _get_subj_conf( subj_id = None, no_loc = False ):
 	s1023.is_loc = False
 	s1023.mask_SI = 95
 
-	s1023.extra_al_params = [ "-parang", "1", "-5", "5",
-	                          "-parang", "2", "11", "21",
-	                          "-parang", "3", "46", "62",
+	s1023.extra_al_params = [ "-parang", "1", "-4", "6",
+	                          "-parang", "2", "16", "26",
+	                          "-parang", "3", "45", "58",
 	                          "-maxrot", "10",
 	                          "-source_automask+2",
 	                          "-nocmass"
 	                        ]
 
-	s1023.node_k = { "lh" : 0,
-	                 "rh" : 0
+	s1023.node_k = { "lh" : 132517,
+	                 "rh" : 130499
 	               }
 
 	s1023_loc = ConfigContainer()
@@ -585,15 +585,15 @@ def _get_subj_conf( subj_id = None, no_loc = False ):
 	s1023_loc.mask_SI = 95
 
 	s1023_loc.extra_al_params = [ "-parang", "1", "-5", "5",
-	                              "-parang", "2", "11", "21",
-	                              "-parang", "3", "46", "62",
+	                              "-parang", "2", "24", "34",
+	                              "-parang", "3", "30", "40",
 	                              "-maxrot", "10",
 	                              "-source_automask+2",
 	                              "-nocmass"
 	                            ]
 
-	s1023_loc.node_k = { "lh" : 0,
-	                     "rh" : 0
+	s1023_loc.node_k = { "lh" : 132517,
+	                     "rh" : 130499
 	                   }
 
 	s1011 = ConfigContainer()
@@ -692,6 +692,31 @@ def _get_subj_conf( subj_id = None, no_loc = False ):
 	                     "rh" : 141576
 	                   }
 
+	s1046 = ConfigContainer()
+
+	s1046.subj_id = "s1046"
+	s1046.fs_subj_id = "s1046"
+	s1046.acq_date = "20130911"
+	s1046.comments = ""
+	s1046.n_runs = 8
+	s1046.mot_base = 4
+	s1046.vol_base = 108
+	s1046.is_loc = False
+	s1046.mask_SI = 100
+
+	s1046.extra_al_params = [ "-parini", "1", "-3",
+	                          "-parini", "2", "38",
+	                          "-parini", "3", "35",
+	                          "-maxrot", "10",
+	                          "-source_automask+2",
+	                          "-nocmass"
+	                        ]
+
+	s1046.node_k = { "lh" : 127459,
+	                 "rh" : 125182
+	               }
+
+
 	s1046_loc = ConfigContainer()
 
 	s1046_loc.subj_id = "s1046_loc"
@@ -716,15 +741,69 @@ def _get_subj_conf( subj_id = None, no_loc = False ):
 	                     "rh" : 125182
 	                   }
 
+	s1033 = ConfigContainer()
+
+	s1033.subj_id = "s1033"
+	s1033.fs_subj_id = "s1033"
+	s1033.acq_date = "20130916"
+	s1033.comments = ""
+	s1033.n_runs = 8
+	s1033.mot_base = 5
+	s1033.vol_base = 108
+	s1033.is_loc = False
+	s1033.mask_SI = 100
+
+	s1033.extra_al_params = [ "-parini", "1", "5",
+	                          "-parini", "2", "29",
+	                          "-parini", "3", "40",
+	                          "-parini", "6", "-5",
+	                          "-maxrot", "10",
+	                          "-source_automask+2",
+	                          "-nocmass"
+	                        ]
+
+	s1033.node_k = { "lh" : 144028,
+	                 "rh" : 145055
+	               }
+
+
+
+	s1033_loc = ConfigContainer()
+
+	s1033_loc.subj_id = "s1033_loc"
+	s1033_loc.fs_subj_id = "s1033"
+	s1033_loc.acq_date = "20130912"
+	s1033_loc.comments = ""
+	s1033_loc.n_runs = 6
+	s1033_loc.mot_base = 4
+	s1033_loc.vol_base = 83
+	s1033_loc.is_loc = True
+	s1033_loc.mask_SI = 100
+
+	s1033_loc.extra_al_params = [ "-parini", "1", "13",# "18",
+	                              "-parini", "2", "26", #"31",
+	                              "-parini", "3", "50",# "55",
+	                              "-parini", "6", "-5",
+	                              "-maxrot", "10",
+	                              "-source_automask+2",
+	                              "-nocmass"
+	                            ]
+
+	s1033_loc.node_k = { "lh" : 144028,
+	                     "rh" : 145055
+	                   }
+
+
 	subj = ConfigContainer()
 
 	subj.subj = { "s1000" : s1000, "s1000_loc" : s1000_loc,
 	              "s1021" : s1021, "s1021_loc" : s1021_loc,
 	              "s1008" : s1008, "s1008_loc" : s1008_loc,
-#	              "s1023" : s1023, "s1023_loc" : s1023_loc,
+	              "s1023" : s1023, "s1023_loc" : s1023_loc,
 	              "s1011" : s1011, "s1011_loc" : s1011_loc,
 	              "s1048" : s1048, "s1048_loc" : s1048_loc,
-#	              "s1046_loc" : s1046_loc
+	              "s1046" : s1046, "s1046_loc" : s1046_loc,
+	              "s1033" : s1033, "s1033_loc" : s1033_loc
 	            }
 
 	if no_loc:
