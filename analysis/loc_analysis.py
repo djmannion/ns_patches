@@ -3,6 +3,7 @@
 import os, os.path
 import logging
 
+import numpy as np
 import scipy.stats
 
 import fmri_tools.utils
@@ -180,4 +181,74 @@ def patch_id( conf, paths ):
 		      ]
 
 		fmri_tools.utils.run_cmd( " ".join( cmd ) )
+
+
+def patch_cluster( conf, paths ):
+	"Apply a cluster threshold to the patch IDs"
+
+	logger = logging.getLogger( __name__ )
+	logger.info( "Running localiser patch cluster thresholding..." )
+
+	os.chdir( paths.loc.base.full() )
+
+	for hemi in [ "lh", "rh" ]:
+
+		hemi_ext = "_{h:s}-full.niml.dset".format( h = hemi )
+
+		id_path = paths.loc.patch_id.full( hemi_ext )
+		spec_path = paths.reg.spec.full( "_{hemi:s}.spec".format( hemi = hemi ) )
+
+		clust_path = paths.loc.patch_id_thr.full( hemi_ext )
+
+		fmri_tools.utils.surf_cluster( surf_path = id_path,
+		                               surf_brick = 0,
+		                               spec_path = spec_path,
+		                               clust_path = clust_path,
+		                               min_area = conf.loc.area_thr
+		                             )
+
+
+def patch_count( conf, paths ):
+	"Count the number of nodes in each patch"
+
+	logger = logging.getLogger( __name__ )
+	logger.info( "Running localiser patch cluster count..." )
+
+	os.chdir( paths.loc.base.full() )
+
+	for hemi in [ "lh", "rh" ]:
+
+		hemi_ext = "_{h:s}-full.niml.dset".format( h = hemi )
+
+		id_ext = "_{h:s}-full_Clustered_e1_a{n:.01f}.niml.dset".format( h = hemi,
+		                                                                n = conf.loc.area_thr
+		                                                              )
+
+		id_path = paths.loc.patch_id_thr.full( id_ext )
+
+		out_path = paths.loc.patch_id_thr.full( "_" + hemi + ".txt" )
+
+		if os.path.exists( out_path ):
+			os.remove( out_path )
+
+		cmd = [ "3dmaskdump",
+		        "-noijk",
+		        "-o", out_path,
+		        "-nozero",
+		        id_path
+		      ]
+
+		fmri_tools.utils.run_cmd( " ".join( cmd ) )
+
+	node_info = np.hstack( [ np.loadtxt( paths.loc.patch_id_thr.full( "_" + hemi + ".txt" ) )
+	                         for hemi in [ "lh", "rh" ]
+	                       ]
+	                     )
+
+	patch_k = [ np.sum( node_info == ( x + 1 ) )
+	            for x in conf.exp.mod_patches
+	          ]
+
+	np.savetxt( paths.loc.patch_id_count.full( ".txt" ), patch_k )
+
 

@@ -144,6 +144,8 @@ def _get_loc_conf( conf ):
 	# degrees of freedom
 	loc_conf.dof = 844
 
+	loc_conf.area_thr = 5
+
 	return loc_conf
 
 
@@ -793,6 +795,56 @@ def _get_subj_conf( subj_id = None, no_loc = False ):
 	                     "rh" : 145055
 	                   }
 
+	s1012 = ConfigContainer()
+
+	s1012.subj_id = "s1012"
+	s1012.fs_subj_id = "s1012"
+	s1012.acq_date = "20130920"
+	s1012.comments = ""
+	s1012.n_runs = 8
+	s1012.mot_base = 5
+	s1012.vol_base = 108
+	s1012.is_loc = False
+	s1012.mask_SI = 100
+
+	s1012.extra_al_params = [ "-parini", "1", "-2",# "5",
+	                          "-parini", "2", "35",# "43",
+	                          "-parini", "3", "40",# "27",
+	                          "-parini", "6", "-5",
+	                          "-maxrot", "10",
+	                          "-source_automask+2",
+	                          "-nocmass"
+	                        ]
+
+	s1012.node_k = { "lh" : 155534,
+	                 "rh" : 159875
+	               }
+
+	s1012_loc = ConfigContainer()
+
+	s1012_loc.subj_id = "s1012_loc"
+	s1012_loc.fs_subj_id = "s1012"
+	s1012_loc.acq_date = "20130917"
+	s1012_loc.comments = ""
+	s1012_loc.n_runs = 6
+	s1012_loc.mot_base = 4
+	s1012_loc.vol_base = 83
+	s1012_loc.is_loc = True
+	s1012_loc.mask_SI = 100
+
+	s1012_loc.extra_al_params = [ "-parini", "1", "0",# "5",
+	                              "-parini", "2", "38",# "43",
+	                              "-parini", "3", "22",# "27",
+	                              "-parini", "6", "-5",
+	                              "-maxrot", "10",
+	                              "-source_automask+2",
+	                              "-nocmass"
+	                            ]
+
+	s1012_loc.node_k = { "lh" : 155534,
+	                     "rh" : 159875
+	                   }
+
 
 	subj = ConfigContainer()
 
@@ -803,7 +855,8 @@ def _get_subj_conf( subj_id = None, no_loc = False ):
 	              "s1011" : s1011, "s1011_loc" : s1011_loc,
 	              "s1048" : s1048, "s1048_loc" : s1048_loc,
 	              "s1046" : s1046, "s1046_loc" : s1046_loc,
-	              "s1033" : s1033, "s1033_loc" : s1033_loc
+	              "s1033" : s1033, "s1033_loc" : s1033_loc,
+	              "s1012" : s1012, "s1012_loc" : s1012_loc
 	            }
 
 	if no_loc:

@@ -52,6 +52,75 @@ def _cleanup_fig( ax ):
 	ax.yaxis.set_ticks_position( "left" )
 
 
+def id_stats():
+
+	all_conf = ns_patches.config.get_conf( None, False )
+
+	subj_ids = all_conf.all_subj.subj.keys()
+	subj_ids.sort()
+
+	_set_defaults()
+
+	fig = plt.figure()
+
+	fig.set_size_inches( 7.08661, 10, forward = False )
+
+	id_k = []
+
+	for subj_id in subj_ids:
+
+		subj_conf = ns_patches.config.get_conf( subj_id )
+
+		if not subj_conf.subj.is_loc:
+			continue
+
+		subj_paths = ns_patches.paths.get_subj_paths( subj_conf )
+
+		k = np.loadtxt( subj_paths.loc.patch_id_count.full( ".txt" ) )
+
+		id_k.append( k )
+
+	id_k = np.vstack( id_k )
+
+	gs = gridspec.GridSpec( 2, 2 )
+
+	ax = plt.subplot( gs[ 0 ] )
+	ax.matshow( id_k, cmap = plt.gray(), clim = [ 0, 50 ] )
+	_cleanup_fig( ax )
+	ax.set_xlabel( "Patch" )
+	ax.set_ylabel( "Subject" )
+
+
+	ax = plt.subplot( gs[ 1 ] )
+	ax.plot( id_k.T )
+	_cleanup_fig( ax )
+	ax.set_xlabel( "Patch" )
+	ax.set_ylabel( "Node count" )
+
+	ax = plt.subplot( gs[ 2 ] )
+	ax.plot( np.mean( id_k, axis = 0 ) )
+	_cleanup_fig( ax )
+	ax.set_xlabel( "Patch" )
+	ax.set_ylabel( "Average nodes" )
+
+	ax = plt.subplot( gs[ 3 ] )
+	ax.plot( np.mean( id_k, axis = 1 ) )
+	_cleanup_fig( ax )
+	ax.set_xlabel( "Subject" )
+	ax.set_ylabel( "Average nodes" )
+
+	plt.subplots_adjust( left = 0.07,
+	                     bottom = 0.1,
+	                     right = 0.98,
+	                     top = 0.95,
+	                     wspace = 0.2,
+	                     hspace = 0.2
+	                   )
+
+	plt.show()
+
+
+
 def all_subj_scatter():
 
 	all_conf = ns_patches.config.get_conf( None, True )
@@ -64,7 +133,7 @@ def all_subj_scatter():
 
 	fig.set_size_inches( 7.08661, 10, forward = True )
 
-	gs = gridspec.GridSpec( 3, 2 )
+	gs = gridspec.GridSpec( 3, 3 )
 
 	for ( i_subj, subj_id ) in enumerate( subj_ids ):
 

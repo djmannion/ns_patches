@@ -230,7 +230,14 @@ def patch_dump( conf, paths ):
 		hemi_ext = "_{h:s}".format( h = hemi )
 
 		# location of the patch ID
-		id_path = loc_paths.loc.patch_id.full( hemi_ext + "-full.niml.dset" )
+#		id_path = loc_paths.loc.patch_id.full( hemi_ext + "-full.niml.dset" )
+		id_ext = "_{h:s}-full_Clustered_e1_a{n:.01f}.niml.dset".format( h = hemi,
+		                                                                n = conf.loc.area_thr
+		                                                              )
+
+		id_path = loc_paths.loc.patch_id_thr.full( id_ext )
+
+		fmri_tools.utils.sparse_to_full( id_path, id_path, str( conf.subj.node_k[ hemi ] ) )
 
 		psc_path = paths.ana.psc.full( hemi_ext + "-full.niml.dset" )
 
