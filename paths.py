@@ -57,6 +57,10 @@ def get_subj_paths( conf ):
 
 	if conf.subj.is_loc:
 		paths.loc = _get_loc_paths( conf, paths )
+		paths.reg = fmri_tools.paths.get_reg_paths( paths.reg.base.full(),
+		                                            conf.subj.fs_subj_id,
+		                                            conf.exp.id
+		                                          )
 	else:
 		paths.ana = _get_ana_paths( conf, paths )
 
@@ -87,6 +91,8 @@ def _get_loc_paths( conf, paths ):
 	loc.sig = loc.base + ( file_base + "sig" )
 	loc.all_patch_id = loc.base + ( file_base + "all_patch_id" )
 	loc.patch_id = loc.base + ( file_base + "patch_id" )
+	loc.patch_id_count = loc.base + ( file_base + "patch_id_count" )
+	loc.patch_id_thr = loc.base + ( file_base + "patch_id_thr" )
 	loc.sig_sum = loc.base + ( file_base + "sig_sum" )
 	loc.vl = loc.base + ( file_base + "vis_loc_rois" )
 

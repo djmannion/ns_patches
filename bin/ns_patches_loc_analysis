@@ -45,6 +45,8 @@ def main():
 
 	proc_steps = ( "glm",
 	               "patch_id",
+	               "patch_cluster",
+	               "patch_count"
 	             )
 
 	parser.add_argument( "proc_step",
@@ -84,6 +86,11 @@ def main():
 	elif args.proc_step == "patch_id":
 		ns_patches.analysis.loc_analysis.patch_id( conf, paths )
 
+	elif args.proc_step == "patch_cluster":
+		ns_patches.analysis.loc_analysis.patch_cluster( conf, paths )
+
+	elif args.proc_step == "patch_count":
+		ns_patches.analysis.loc_analysis.patch_count( conf, paths )
 
 	else:
 		print "Not implemented"
