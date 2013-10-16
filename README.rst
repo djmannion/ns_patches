@@ -137,6 +137,13 @@ Estimate the GLM::
 Patch identification
 ~~~~~~~~~~~~~~~~~~~~
 
+Before running, make a copy of the subject's visual localiser ROIs::
+
+    cd analysis
+    3dcopy \
+      ${ROI_DIR}/${SUBJ_ID}_vis_loc_rois_${HEMI}-full.niml.dset \
+      ${SUBJ_ID}_ns_patches-vis_loc_rois_${HEMI}-full.niml.dset
+
 Work out the assignment of V1 nodes to patches::
 
     ns_patches_loc_analysis sXXXX patch_id
