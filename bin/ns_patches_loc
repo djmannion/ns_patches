@@ -34,7 +34,7 @@ Example usage:
 #current_dir = os.getcwd()
 
 #if current_dir[ -len( target_dir ): ] != target_dir:
-#	raise IOError( "Script needs to be launched from %s" % target_dir )
+#   raise IOError( "Script needs to be launched from %s" % target_dir )
 
 # use this formatter so we can supply our own indentation
 fmt = argparse.RawDescriptionHelpFormatter
@@ -60,10 +60,10 @@ args = parser.parse_args()
 
 for i_run in np.arange( args.start - 1, args.end ):
 
-	print "Executing: ns_patches.exp.loc.run( {n:d} )".format( n = i_run + 1 )
+    print "Executing: ns_patches.exp.loc.run( {n:d} )".format( n = i_run + 1 )
 
-	exit_status = ns_patches.exp.loc.run( i_run + 1 )
+    exit_status = ns_patches.exp.loc.run( i_run + 1 )
 
-	if exit_status == 1:
-		print "Aborting sequence"
-		sys.exit( exit_status )
+    if exit_status == 1:
+        print "Aborting sequence"
+        sys.exit( exit_status )

@@ -7,9 +7,9 @@ import ns_patches.prepare.prepare_images
 
 if __name__ == "__main__":
 
-	mon = ns_patches.config._get_acq_conf().monitor_name
+    mon = ns_patches.config._get_acq_conf().monitor_name
 
-	ns_patches.prepare.prepare_images.img_browser( save_changes = False,
-	                                               mon_name = mon,
-	                                               shuffle = True
-	                                             )
+    ns_patches.prepare.prepare_images.img_browser( save_changes = False,
+                                                   mon_name = mon,
+                                                   shuffle = True
+                                                 )
