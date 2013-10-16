@@ -12,7 +12,6 @@ import ns_patches.paths
 
 
 class ConfigContainer( object ):
-
     pass
 
 
@@ -40,6 +39,7 @@ def _get_exp_conf( conf ):
     exp_conf.id = "ns_patches"
 
     exp_conf.mod_patches = range( 28 )
+    # remove patches on the vertical meridian
     _ = [ exp_conf.mod_patches.remove( p )
           for p in [ 20 - 1, 26 - 1 ]
         ]
@@ -175,7 +175,6 @@ def _get_stim_conf():
                   ]
 
     # ~ 1.8, 3.5, 6.1, 9.75 deg
-#   ring_ecc = [ 62, 123, 212, 340 ]
     ring_ecc = [ 58, 113, 196, 313 ]
 
     # M0 = 29.2/3.67; M = 29.2/(e+3.67); D = M0/M*15*2*1.08
@@ -731,9 +730,9 @@ def _get_subj_conf( subj_id = None, no_loc = False ):
     s1046_loc.is_loc = True
     s1046_loc.mask_SI = 100
 
-    s1046_loc.extra_al_params = [ "-parini", "1", "4", #"9",
-                                  "-parini", "2", "35",# "30",
-                                  "-parini", "3", "6",# "11",
+    s1046_loc.extra_al_params = [ "-parini", "1", "4",
+                                  "-parini", "2", "35",
+                                  "-parini", "3", "6",
                                   "-maxrot", "10",
                                   "-source_automask+2",
                                   "-nocmass"

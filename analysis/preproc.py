@@ -136,16 +136,18 @@ def mc_unwarp( conf, paths ):
     i_run_base = conf.subj.mot_base - 1
     fugue_params = [ "--median" ]
     i_vol_base = conf.subj.vol_base
-    dwell_ms = conf.acq.dwell_ms
 
+    # one subject's localisers were collected at 1.5mm resolution, and with different PE etc.
     if conf.subj.subj_id != "s1046_loc":
         uw_direction_fsl = conf.acq.ph_enc_dir
         uw_direction_afni = "LR"
         voxel_size = "1.0"
+        dwell_ms = conf.acq.dwell_ms
     else:
         uw_direction_fsl = "z"
         uw_direction_afni = "SI"
         voxel_size = "1.5"
+        dwell_ms = 0.71 / 2.0
 
     fmap_path = paths.fmap.fmap.full()
 
