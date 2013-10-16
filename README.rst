@@ -123,19 +123,8 @@ Projects the functional images to a standardised cortical surface, averaging bet
 
 
 
-Univariate experiment analysis
-==============================
-
-
-Subject-level
--------------
-
-Design preparation
-~~~~~~~~~~~~~~~~~~
-Computes the experimental design from the logfiles::
-
-    ns_patches_analysis sXXXX design_prep
-
+Localiser analysis
+==================
 
 GLM
 ~~~
