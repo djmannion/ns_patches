@@ -43,8 +43,8 @@ def img_browser( skip_discarded = True,
 		img_db_info = img_db_info[ np.random.permutation( len( img_db_info ) ) ]
 
 	win = psychopy.visual.Window( ( 1024, 768 ),
-	                              fullscr = True,
-	                              allowGUI = False,
+	                              fullscr = False,
+	                              allowGUI = True,
 	                              monitor = mon_name,
 	                              units = "pix"
 	                            )
@@ -154,7 +154,7 @@ def img_browser( skip_discarded = True,
 				                            ( masks[ i_incoh_patch, ... ] > 0 )
 				                          )
 
-		stim.setImage( new_img )
+		stim.setTex( new_img )
 
 		change_image = False
 		mask_off = False
@@ -204,11 +204,11 @@ def img_browser( skip_discarded = True,
 				elif key in [ "m", "b" ]:
 					if not mask_off:
 						temp_mask = stim._maskName.copy()
-						stim.setImage( coh_img )
+						stim.setTex( coh_img )
 						stim.setMask( np.ones( coh_img.shape ) )
 						mask_off = True
 					else:
-						stim.setImage( new_img )
+						stim.setTex( new_img )
 						stim.setMask( temp_mask )
 						mask_off = False
 
