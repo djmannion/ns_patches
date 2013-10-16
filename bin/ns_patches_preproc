@@ -15,26 +15,10 @@ def main():
 
     desc = """Runs a pre-processing step for a subject in the ns_patches fMRI experiment"""
 
-    eg = """
-    Example usage:
-      run motion correction on subject s1000:
-        ns_patches_preproc s1000 correct
-    
-    Steps:
-      convert : converts the scanner DICOM images to NIFTIs.
-      correct : performs motion correction.
-      fieldmap : prepares the fieldmaps.
-      undistort : applies distortion correction to the functional data.
-      sess_reg : register to the canonical anatomy.
-      vol_to_surf : project the volumes onto the cortical surface.
-    
-    """
-
     # use this formatter so we can supply our own indentation
     fmt = argparse.RawDescriptionHelpFormatter
 
     parser = argparse.ArgumentParser( description = desc,
-                                      epilog = eg,
                                       formatter_class = fmt,
                                     )
 
