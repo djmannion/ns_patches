@@ -131,105 +131,30 @@ GLM
 
 Estimate the GLM::
 
-    ns_patches_analysis sXXXX glm
+    ns_patches_loc_analysis sXXXX glm
 
 
-Cluster summary
-~~~~~~~~~~~~~~~
+Patch identification
+~~~~~~~~~~~~~~~~~~~~
 
-After the group-level clustering has been done, run::
+Work out the assignment of V1 nodes to patches::
 
-    ns_patches_analysis sXXXX coh_clust_summ
-
-
-Group-level
------------
-
-Height threshold
-~~~~~~~~~~~~~~~~
-
-Runs a one-sample t-test on the subject beta weights::
-
-    ns_patches_group_analysis coh_test
+    ns_patches_loc_analysis sXXXX patch_id
 
 
-Cluster threshold
-~~~~~~~~~~~~~~~~~
+Patch cluster
+~~~~~~~~~~~~~
 
-To apply the cluster threshold::
+Applies a small cluster threshold to get rid of salt-and-pepper noise::
 
-    ns_patches_group_analysis coh_clust
-
-
-Cluster summary
-~~~~~~~~~~~~~~~
-
-To print out a summary of the cluster beta statistics::
-
-    ns_patches_group_analysis coh_effect_size
+    ns_patches_loc_analysis sXXXX patch_cluster
 
 
+Patch count
+~~~~~~~~~~~
 
-Univariate localiser analysis
-=============================
+Generates some stats (number of nodes) for each patch::
 
+    ns_patches_loc_analysis sXXXX patch_count
 
-Subject-level
--------------
-
-Design preparation
-~~~~~~~~~~~~~~~~~~
-
-Generate the design info::
-
-    ns_patches_analysis sXXXX loc_design_prep
-
-GLM
-~~~
-
-Execute the GLM::
-
-    ns_patches_analysis sXXXX loc_glm
-
-
-Group-level
------------
-
-Height threshold
-~~~~~~~~~~~~~~~~
-
-Runs a one-sample t-test on the ( either > 0 ) regressor::
-
-    ns_patches_analysis loc_test
-
-
-Cluster threshold
-~~~~~~~~~~~~~~~~~
-
-
-Multivariate analysis
-=====================
-
-Subject-level
--------------
-
-Design and data preparation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This saves the node info, the condition info, and the z-scored block data for a given subject. Run::
-
-    ns_patches_analysis sXXXX mvpa_prep
-
-
-Classification
-~~~~~~~~~~~~~~
-
-Group-level
------------
-
-Height threshold
-~~~~~~~~~~~~~~~~
-
-Cluster threshold
-~~~~~~~~~~~~~~~~~
 
