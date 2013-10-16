@@ -18,8 +18,8 @@ def run( run_num ):
 
 	win = psychopy.visual.Window( ( 1024, 768 ),
 	                              monitor = "UMN_7T_colour",
-	                              fullscr = True,
-	                              allowGUI = False
+	                              fullscr = False,
+	                              allowGUI = True
 	                            )
 
 	stim = get_stim( win, conf )

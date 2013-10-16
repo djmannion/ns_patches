@@ -61,8 +61,8 @@ def run( subj_id, run_num, show_perf = True, mon_name = "UMN_7T_colour" ):
 
 	win = psychopy.visual.Window( ( 1024, 768 ),
 	                              monitor = mon_name,
-	                              fullscr = True,
-	                              allowGUI = False
+	                              fullscr = False,
+	                              allowGUI = True
 	                            )
 
 	perf_text = psychopy.visual.TextStim( win = win,
@@ -282,7 +282,7 @@ def update_stim( conf, stim, img, masks, img_seq ):
 			                            ( masks[ i_patch, ... ] > 0 )
 			                          )
 
-	stim.setImage( new_img )
+	stim.setTex( new_img )
 
 	return stim
 
@@ -318,8 +318,8 @@ def gen_stim( conf, win, masks ):
 
 	img_mask = np.sum( masks, axis = 0 ) * 2.0 - 1.0
 
-	stim = psychopy.visual.ImageStim( win = win,
-	                                  image = np.ones( img_size ),
+	stim = psychopy.visual.GratingStim( win = win,
+	                                  tex = np.ones( img_size ),
 	                                  size = img_size,
 	                                  units = "pix",
 	                                  mask = img_mask
