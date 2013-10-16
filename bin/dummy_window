@@ -4,7 +4,6 @@ import psychopy.visual
 
 if __name__ == "__main__":
 
-	w = psychopy.visual.Window( ( 1024, 768 ), fullscr = True, allowGUI = False
-)
+    w = psychopy.visual.Window( ( 1024, 768 ), fullscr = True, allowGUI = False )
 
-	w.close()
+    w.close()

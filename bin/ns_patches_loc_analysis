@@ -11,83 +11,90 @@ import ns_patches.analysis.loc_analysis
 
 
 def main():
-	"""Execution function"""
+    """Execution function"""
 
-	desc = """Runs a pre-processing step for a subject in the ns_patches fMRI experiment"""
+    desc = """Runs a pre-processing step for a subject in the ns_patches fMRI experiment"""
 
-	eg = """
-	Example usage:
-	  run motion correction on subject s1000:
-	    ns_patches_preproc s1000 correct
-	
-	Steps:
-	  convert : converts the scanner DICOM images to NIFTIs.
-	  correct : performs motion correction.
-	  fieldmap : prepares the fieldmaps.
-	  undistort : applies distortion correction to the functional data.
-	  sess_reg : register to the canonical anatomy.
-	  vol_to_surf : project the volumes onto the cortical surface.
-	  design_prep : prepares design specs for future GLM analysis.
-	
-	"""
+    eg = """
+    Example usage:
+      run motion correction on subject s1000:
+        ns_patches_preproc s1000 correct
+    
+    Steps:
+      convert : converts the scanner DICOM images to NIFTIs.
+      correct : performs motion correction.
+      fieldmap : prepares the fieldmaps.
+      undistort : applies distortion correction to the functional data.
+      sess_reg : register to the canonical anatomy.
+      vol_to_surf : project the volumes onto the cortical surface.
+      design_prep : prepares design specs for future GLM analysis.
+    
+    """
 
-	# use this formatter so we can supply our own indentation
-	fmt = argparse.RawDescriptionHelpFormatter
+    # use this formatter so we can supply our own indentation
+    fmt = argparse.RawDescriptionHelpFormatter
 
-	parser = argparse.ArgumentParser( description = desc,
-	                                  epilog = eg,
-	                                  formatter_class = fmt,
-	                                )
+    parser = argparse.ArgumentParser( description = desc,
+                                      epilog = eg,
+                                      formatter_class = fmt,
+                                    )
 
-	parser.add_argument( "subj_id",
-	                     help = "Subject identifier"
-	                   )
+    parser.add_argument( "subj_id",
+                         help = "Subject identifier"
+                       )
 
-	proc_steps = ( "glm",
-	               "patch_id",
-	             )
+    proc_steps = ( "glm",
+                   "patch_id",
+                   "patch_cluster",
+                   "patch_count"
+                 )
 
-	parser.add_argument( "proc_step",
-	                     choices = proc_steps,
-	                     help = "Processing step"
-	                   )
+    parser.add_argument( "proc_step",
+                         choices = proc_steps,
+                         help = "Processing step"
+                       )
 
-	args = parser.parse_args()
+    args = parser.parse_args()
 
-	# check the arguments are valid
-#	if len( args.subj_id ) != 5 or args.subj_id[ 0 ] != "s":
-#		raise ValueError( "Subject ID needs to be in the format of sXXXX" )
+    # check the arguments are valid
+#   if len( args.subj_id ) != 5 or args.subj_id[ 0 ] != "s":
+#       raise ValueError( "Subject ID needs to be in the format of sXXXX" )
 
-	# load the experiment / subject info
-	conf = ns_patches.config.get_conf( args.subj_id )
-	paths = ns_patches.paths.get_subj_paths( conf )
+    # load the experiment / subject info
+    conf = ns_patches.config.get_conf( args.subj_id )
+    paths = ns_patches.paths.get_subj_paths( conf )
 
-	logger = logging.getLogger()
-	logger.setLevel( logging.INFO )
+    logger = logging.getLogger()
+    logger.setLevel( logging.INFO )
 
-	log_fmt = logging.Formatter( "%(name)s, %(asctime)s, (%(levelname)s)\n-----\n%(message)s\n" )
+    log_fmt = logging.Formatter( "%(name)s, %(asctime)s, (%(levelname)s)\n-----\n%(message)s\n" )
 
-	file_log = logging.FileHandler( paths.log.full() )
-	file_log.setFormatter( log_fmt )
+    file_log = logging.FileHandler( paths.log.full() )
+    file_log.setFormatter( log_fmt )
 
-	logger.addHandler( file_log )
+    logger.addHandler( file_log )
 
-	scr_log = logging.StreamHandler( sys.stdout )
-	scr_log.setLevel( logging.INFO )
-	scr_log.setFormatter( log_fmt )
+    scr_log = logging.StreamHandler( sys.stdout )
+    scr_log.setLevel( logging.INFO )
+    scr_log.setFormatter( log_fmt )
 
-	logger.addHandler( scr_log )
+    logger.addHandler( scr_log )
 
-	if args.proc_step == "glm":
-		ns_patches.analysis.loc_analysis.glm( conf, paths )
+    if args.proc_step == "glm":
+        ns_patches.analysis.loc_analysis.glm( conf, paths )
 
-	elif args.proc_step == "patch_id":
-		ns_patches.analysis.loc_analysis.patch_id( conf, paths )
+    elif args.proc_step == "patch_id":
+        ns_patches.analysis.loc_analysis.patch_id( conf, paths )
 
+    elif args.proc_step == "patch_cluster":
+        ns_patches.analysis.loc_analysis.patch_cluster( conf, paths )
 
-	else:
-		print "Not implemented"
+    elif args.proc_step == "patch_count":
+        ns_patches.analysis.loc_analysis.patch_count( conf, paths )
+
+    else:
+        print "Not implemented"
 
 
 if __name__ == "__main__":
-	main()
+    main()
