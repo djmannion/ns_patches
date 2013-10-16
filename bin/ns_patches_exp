@@ -62,18 +62,18 @@ parser.add_argument( "--monitor",
 args = parser.parse_args()
 
 if len( args.subj_id ) != 5 or args.subj_id[ 0 ] != "s":
-	raise ValueError( "Subject ID needs to be in the format of sXXXX" )
+    raise ValueError( "Subject ID needs to be in the format of sXXXX" )
 
 for run_num in np.arange( args.start, args.end + 1 ):
 
-	print "Executing: ns_patches.exp.exp.run( {s:s}, {n:d}, mon_name = {m:s} )".format( s = args.subj_id,
-	                                                                                    n = run_num,
-	                                                                                    m = args.monitor
-	                                                                                  )
+    print "Executing: ns_patches.exp.exp.run( {s:s}, {n:d}, mon_name = {m:s} )".format( s = args.subj_id,
+                                                                                        n = run_num,
+                                                                                        m = args.monitor
+                                                                                      )
 
-	exit_status = ns_patches.exp.exp.run( args.subj_id, run_num, mon_name = args.monitor )
+    exit_status = ns_patches.exp.exp.run( args.subj_id, run_num, mon_name = args.monitor )
 
-	if exit_status == 1:
-		print "Aborting sequence"
-		sys.exit( exit_status )
+    if exit_status == 1:
+        print "Aborting sequence"
+        sys.exit( exit_status )
 
