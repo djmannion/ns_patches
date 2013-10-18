@@ -305,7 +305,8 @@ def image_resp( conf, paths ):
         # average over nodes for this patch
         patch_data[ i_patch, : ] = np.mean( resp[ i_node_patch, 1: ], axis = 0 )
 
-    assert np.sum( np.isnan( patch_data ) ) == 0
+    if np.sum( np.isnan( patch_data ) ) != 0:
+        print "Warning: NaN values for " + conf.subj.subj_id
 
     img_resp = np.empty( ( conf.exp.n_mod_patches,
                            conf.exp.n_img,
@@ -386,9 +387,6 @@ def image_resp( conf, paths ):
                                       ]
                                     )
                 control_resp[ i_patch, i_img, run_num - 1, 1 ] = p_two_mean
-
-    assert np.sum( np.isnan( img_resp ) ) == 0
-    assert np.sum( np.isnan( control_resp ) ) == 0
 
     np.save( paths.ana.img_resp.full( ".npy" ), img_resp )
     np.save( paths.ana.img_resp.full( "-control.npy" ), control_resp )
