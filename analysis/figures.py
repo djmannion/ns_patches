@@ -13,7 +13,7 @@ import ns_patches.config, ns_patches.paths
 
 def id_stats():
 
-    all_conf = ns_patches.config.get_conf( subj_id = None, no_loc = False )
+    all_conf = ns_patches.config.get_conf( subj_id = None, subj_types = "loc" )
 
     subj_ids = all_conf.all_subj.subj.keys()
     subj_ids.sort()
@@ -43,6 +43,8 @@ def id_stats():
         if np.any( k == 0 ):
             print "Subject " + subj_id + " has 0 node counts"
 
+    print id_k
+
     assert np.sum( np.isnan( id_k ) ) == 0
 
     gs = gridspec.GridSpec( 1, 2 )
@@ -54,12 +56,14 @@ def id_stats():
         mean_data = np.mean( id_k, axis = i_axis )
         err_data = np.std( id_k, axis = i_axis, ddof = 1 ) / np.sqrt( id_k.shape[ i_axis ] )
 
-        ax.plot( range( 1, len( mean_data ) + 1, mean_data )
+        ax.plot( range( 1, len( mean_data ) + 1 ), mean_data )
 
         figutils.cleanup_fig( ax )
 
 
-    plt.show()
+#    plt.show()
+
+    return id_k
 
 
 
