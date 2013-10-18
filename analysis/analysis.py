@@ -7,6 +7,7 @@ import numpy as np
 import scipy.stats
 
 import fmri_tools.utils
+import runcmd
 
 import ns_patches.config, ns_patches.paths
 
@@ -105,7 +106,7 @@ def glm( conf, paths ):
                      "-overwrite"
                    ]
 
-        fmri_tools.utils.run_cmd( " ".join( mask_cmd ) )
+        runcmd.run_cmd( " ".join( mask_cmd ) )
 
         glm_cmd = [ "3dDeconvolve",
                     "-input"
@@ -155,7 +156,7 @@ def glm( conf, paths ):
                       )
 
         # run this first GLM
-        fmri_tools.utils.run_cmd( " ".join( glm_cmd ) )
+        runcmd.run_cmd( " ".join( glm_cmd ) )
 
         # delete the annoying command file that 3dDeconvolve writes
         os.remove( "Decon.REML_cmd" )
@@ -176,7 +177,7 @@ def glm( conf, paths ):
         reml_cmd.append( "'" + " ".join( surf_paths ) + "'" )
 
         # run the proper GLM
-        fmri_tools.utils.run_cmd( " ".join( reml_cmd ) )
+        runcmd.run_cmd( " ".join( reml_cmd ) )
 
     os.chdir( start_dir )
 
@@ -230,7 +231,6 @@ def patch_dump( conf, paths ):
         hemi_ext = "_{h:s}".format( h = hemi )
 
         # location of the patch ID
-#       id_path = loc_paths.loc.patch_id.full( hemi_ext + "-full.niml.dset" )
         id_ext = "_{h:s}-full_Clustered_e1_a{n:.01f}.niml.dset".format( h = hemi,
                                                                         n = conf.loc.area_thr
                                                                       )
@@ -254,7 +254,7 @@ def patch_dump( conf, paths ):
                 psc_path
               ]
 
-        fmri_tools.utils.run_cmd( " ".join( cmd ) )
+        runcmd.run_cmd( " ".join( cmd ) )
 
         # we want to combine across hemispheres, so load the result
         resp.append( np.loadtxt( resp_path ) )

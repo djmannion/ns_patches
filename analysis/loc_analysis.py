@@ -7,6 +7,7 @@ import numpy as np
 import scipy.stats
 
 import fmri_tools.utils
+import runcmd
 
 
 def glm( conf, paths ):
@@ -71,7 +72,7 @@ def glm( conf, paths ):
                           )
 
         # run this first GLM
-        fmri_tools.utils.run_cmd( " ".join( glm_cmd ) )
+        runcmd.run_cmd( " ".join( glm_cmd ) )
 
         # delete the annoying command file that 3dDeconvolve writes
         os.remove( "Decon.REML_cmd" )
@@ -91,7 +92,7 @@ def glm( conf, paths ):
         reml_cmd.append( "'" + " ".join( surf_paths ) + "'" )
 
         # run the proper GLM
-        fmri_tools.utils.run_cmd( " ".join( reml_cmd ) )
+        runcmd.run_cmd( " ".join( reml_cmd ) )
 
     os.chdir( start_dir )
 
@@ -125,7 +126,7 @@ def patch_id( conf, paths ):
                     "-overwrite"
                   ]
 
-        fmri_tools.utils.run_cmd( " ".join( sig_cmd ) )
+        runcmd.run_cmd( " ".join( sig_cmd ) )
 
 
         # then, count how many significant regressors there are at each node
@@ -138,7 +139,7 @@ def patch_id( conf, paths ):
                         sig_path
                       ]
 
-        fmri_tools.utils.run_cmd( " ".join( sig_sum_cmd ) )
+        runcmd.run_cmd( " ".join( sig_sum_cmd ) )
 
 
         # now work out which ID is significant for each node, subject to the
@@ -154,7 +155,7 @@ def patch_id( conf, paths ):
                    glm_path
                  ]
 
-        fmri_tools.utils.run_cmd( " ".join( id_cmd ) )
+        runcmd.run_cmd( " ".join( id_cmd ) )
 
         full_hemi_ext = "_{h:s}-full.niml.dset".format( h = hemi )
 
@@ -180,7 +181,7 @@ def patch_id( conf, paths ):
                 "-prefix", id_path_full
               ]
 
-        fmri_tools.utils.run_cmd( " ".join( cmd ) )
+        runcmd.run_cmd( " ".join( cmd ) )
 
 
 def patch_cluster( conf, paths ):
@@ -238,7 +239,7 @@ def patch_count( conf, paths ):
                 id_path
               ]
 
-        fmri_tools.utils.run_cmd( " ".join( cmd ) )
+        runcmd.run_cmd( " ".join( cmd ) )
 
     node_info = np.hstack( [ np.loadtxt( paths.loc.patch_id_thr.full( "_" + hemi + ".txt" ) )
                              for hemi in [ "lh", "rh" ]
