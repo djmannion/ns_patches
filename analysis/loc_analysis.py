@@ -208,6 +208,18 @@ def patch_cluster( conf, paths ):
                                        min_area = conf.loc.area_thr
                                      )
 
+        # output is no longer a full dataset - make it so
+        hemi_ext = "_{h:s}".format( h = hemi )
+
+        # location of the patch ID, clustered
+        id_ext = "_{h:s}-full_Clustered_e1_a{n:.01f}.niml.dset".format( h = hemi,
+                                                                        n = conf.loc.area_thr
+                                                                      )
+
+        id_path = paths.loc.patch_id_thr.full( id_ext )
+
+        fmri_tools.utils.sparse_to_full( id_path, id_path, str( conf.subj.node_k[ hemi ] ) )
+
 
 def patch_count( conf, paths ):
     "Count the number of nodes in each patch"

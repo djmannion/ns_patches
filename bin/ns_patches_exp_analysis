@@ -15,21 +15,10 @@ def main():
 
     desc = "Runs an analysis step for a subject in the ns_patches fMRI experiment"
 
-    eg = """
-    Example usage:
-      run motion correction on subject s1000:
-        ns_patches_preproc s1000 correct
-    
-    Steps:
-      glm : run the GLM
-    
-    """
-
     # use this formatter so we can supply our own indentation
     fmt = argparse.RawDescriptionHelpFormatter
 
     parser = argparse.ArgumentParser( description = desc,
-                                      epilog = eg,
                                       formatter_class = fmt,
                                     )
 
@@ -40,9 +29,7 @@ def main():
     proc_steps = ( "glm",
                    "beta_to_psc",
                    "patch_dump",
-                   "image_resp",
-                   "vec_resp",
-                   "subj_regress"
+                   "image_resp"
                  )
 
     parser.add_argument( "proc_step",
@@ -84,12 +71,6 @@ def main():
 
     elif args.proc_step == "image_resp":
         ns_patches.analysis.analysis.image_resp( conf, paths )
-
-    elif args.proc_step == "vec_resp":
-        ns_patches.analysis.analysis.vec_resp( conf, paths )
-
-    elif args.proc_step == "subj_regress":
-        ns_patches.analysis.analysis.subj_regress( conf, paths )
 
     else:
         print "Not implemented"

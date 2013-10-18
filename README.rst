@@ -165,3 +165,46 @@ Generates some stats (number of nodes) for each patch::
     ns_patches_loc_analysis sXXXX patch_count
 
 
+Experiment analysis
+===================
+
+GLM
+~~~
+
+Before running, make a copy of the subject's visual localiser ROIs (we only run the GLM for V1 nodes)::
+
+    cd analysis
+    3dcopy \
+      ${ROI_DIR}/${SUBJ_ID}_vis_loc_rois_${HEMI}-full.niml.dset \
+      ${SUBJ_ID}_ns_patches-vis_loc_rois_${HEMI}-full.niml.dset
+
+Estimate the GLM::
+
+    ns_patches_exp_analysis sXXXX glm
+
+
+Percent-signal-change conversion
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Run::
+
+    ns_patches_exp_analysis sXXXX beta_to_psc
+
+
+Patch dump
+~~~~~~~~~~
+
+This dumps the values for each image presentation for each node with an associated patch::
+
+    ns_patches_exp_analysis sXXXX patch_dump
+
+
+Image parcellate
+~~~~~~~~~~~~~~~~
+
+Distribute the patch information over image types::
+
+    ns_patches_exp_analysis sXXXX image_resp
+
+This results in ``${SUBJ_ID}_ns_patches-img_resp.npy``, which is a patch (26) x image (20) x run (8) x coherence (2) matrix.
+

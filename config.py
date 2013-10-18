@@ -15,7 +15,10 @@ class ConfigContainer( object ):
     pass
 
 
-def get_conf( subj_id = None, no_loc = False ):
+def get_conf( subj_id = None, subj_types = "all", excl_subj_ids = None ):
+
+    if excl_subj_ids is None:
+        excl_subj_ids = []
 
     conf = ConfigContainer()
 
@@ -24,7 +27,7 @@ def get_conf( subj_id = None, no_loc = False ):
     conf.exp = _get_exp_conf( conf )
     conf.loc = _get_loc_conf( conf )
     conf.ana = _get_ana_conf()
-    conf.all_subj = _get_subj_conf( None, no_loc)
+    conf.all_subj = _get_subj_conf( None, subj_types, excl_subj_ids )
 
     if subj_id is not None:
         conf.subj = _get_subj_conf( subj_id )
@@ -86,6 +89,9 @@ def _get_exp_conf( conf ):
 def _get_ana_conf():
 
     ana_conf = ConfigContainer()
+
+    ana_conf.exclude_subj_ids = [ "s1023" ]  # poor localisers
+    ana_conf.exclude_patch_ids = [ 18, 24 ]  # subj with < 5 nodes
 
     return ana_conf
 
@@ -402,7 +408,10 @@ def gen_exp_patch_timing( conf ):
     return design
 
 
-def _get_subj_conf( subj_id = None, no_loc = False ):
+def _get_subj_conf( subj_id = None, subj_types = "all", excl_subj_ids = None ):
+
+    if excl_subj_ids is None:
+        excl_subj_ids = []
 
     s1000 = ConfigContainer()
 
@@ -858,8 +867,13 @@ def _get_subj_conf( subj_id = None, no_loc = False ):
                   "s1012" : s1012, "s1012_loc" : s1012_loc
                 }
 
-    if no_loc:
+    if subj_types == "loc":
+        subj.subj = { x : subj.subj[ x ] for x in subj.subj if "loc" in x }
+    elif subj_types == "exp":
         subj.subj = { x : subj.subj[ x ] for x in subj.subj if not "loc" in x }
+
+    for excl_subj_id in excl_subj_ids:
+        del( subj.subj[ excl_subj_id ] )
 
     if subj_id is None:
         return subj

@@ -203,7 +203,7 @@ def beta_to_psc( conf, paths ):
         # 4 orthogonal polynomial regressors per run
         n_nuisance = conf.subj.n_runs * 4
 
-
+        # checked via '-verb'
         beta_bricks = "[{n:d}..$]".format( n = n_nuisance )
 
         fmri_tools.utils.beta_to_psc( beta_path,
@@ -236,8 +236,6 @@ def patch_dump( conf, paths ):
                                                                       )
 
         id_path = loc_paths.loc.patch_id_thr.full( id_ext )
-
-        fmri_tools.utils.sparse_to_full( id_path, id_path, str( conf.subj.node_k[ hemi ] ) )
 
         psc_path = paths.ana.psc.full( hemi_ext + "-full.niml.dset" )
 
@@ -290,10 +288,19 @@ def image_resp( conf, paths ):
     patch_data = np.empty( ( conf.exp.n_mod_patches, resp.shape[ 1 ] - 1 ) )
     patch_data.fill( np.NAN )
 
-    for i_patch in xrange( conf.exp.n_mod_patches ):
+    nodes_used = []
 
+    # loop through each modulated patch ID - which are 0-based
+    for ( i_patch, patch_num ) in enumerate( conf.exp.mod_patches ):
+
+        # find all the nodes where the ID matches the patch
         # in `resp`, patch ID is stored as one-based
-        i_node_patch = np.where( resp[ :, 0 ] == ( i_patch + 1 ) )[ 0 ]
+        i_node_patch = np.where( resp[ :, 0 ] == ( patch_num + 1 ) )[ 0 ]
+
+        # just make sure we aren't double-dipping
+        assert len( np.intersect1d( i_node_patch, nodes_used ) ) == 0
+
+        nodes_used.extend( list( i_node_patch ) )
 
         # average over nodes for this patch
         patch_data[ i_patch, : ] = np.mean( resp[ i_node_patch, 1: ], axis = 0 )
@@ -385,161 +392,6 @@ def image_resp( conf, paths ):
 
     np.save( paths.ana.img_resp.full( ".npy" ), img_resp )
     np.save( paths.ana.img_resp.full( "-control.npy" ), control_resp )
-
-
-def vec_resp( conf, paths ):
-
-    # is 26 x 20 x 8 x 2
-    img_resp = np.load( paths.ana.img_resp.full( ".npy" ) )
-
-    # average over runs
-    img_resp = np.mean( img_resp, axis = 2 )
-
-    # concatenate patches and images
-    img_resp = np.vstack( [ img_resp[ ..., 0 ].flatten(),
-                            img_resp[ ..., 1 ].flatten()
-                          ]
-                        )
-
-    assert img_resp.shape[ 0 ] == 2
-
-    img_resp = img_resp.T
-
-    np.savetxt( paths.ana.vec_resp.full( ".txt" ), img_resp )
-
-
-def subj_regress( conf, paths ):
-
-    vec_resp = np.loadtxt( paths.ana.vec_resp.full( ".txt" ) )
-
-    reg_coef = scipy.stats.linregress( vec_resp[ :, 0 ],
-                                       vec_resp[ :, 1 ]
-                                     )[ :2 ]
-
-    reg_coef = total_least_squares( vec_resp[ :, 0 ],
-                                    vec_resp[ :, 1 ]
-                                  )
-
-    np.savetxt( paths.ana.regress.full( ".txt" ), reg_coef )
-
-
-def total_least_squares(data1, data2, data1err=None, data2err=None,
-        print_results=False, ignore_nans=True, intercept=True,
-        return_error=False, inf=1e10):
-    """
-Use Singular Value Decomposition to determine the Total Least Squares linear fit to the data.
-(e.g. http://en.wikipedia.org/wiki/Total_least_squares)
-data1 - x array
-data2 - y array
-
-if intercept:
-returns m,b in the equation y = m x + b
-else:
-returns m
-
-print tells you some information about what fraction of the variance is accounted for
-
-ignore_nans will remove NAN values from BOTH arrays before computing
-
-Parameters
-----------
-data1,data2 : np.ndarray
-Vectors of the same length indicating the 'x' and 'y' vectors to fit
-data1err,data2err : np.ndarray or None
-Vectors of the same length as data1,data2 holding the 1-sigma error values
-
-"""
-
-    if ignore_nans:
-        badvals = np.isnan(data1) + np.isnan(data2)
-        if data1err is not None:
-            badvals += np.isnan(data1err)
-        if data2err is not None:
-            badvals += np.isnan(data2err)
-        goodvals = True-badvals
-        if goodvals.sum() < 2:
-            if intercept:
-                return 0,0
-            else:
-                return 0
-        if badvals.sum():
-            data1 = data1[goodvals]
-            data2 = data2[goodvals]
-
-    
-    if intercept:
-        dm1 = data1.mean()
-        dm2 = data2.mean()
-    else:
-        dm1,dm2 = 0,0
-
-    arr = np.array([data1-dm1,data2-dm2]).T
-
-    U,S,V = np.linalg.svd(arr, full_matrices=False)
-
-    # v should be sorted.
-    # this solution should be equivalent to v[1,0] / -v[1,1]
-    # but I'm using this: http://stackoverflow.com/questions/5879986/pseudo-inverse-of-sparse-matrix-in-python
-    M = V[-1,0]/-V[-1,-1]
-
-    varfrac = S[0]/S.sum()*100
-    if varfrac < 50:
-        raise ValueError("ERROR: SVD/TLS Linear Fit accounts for less than half the variance; this is impossible by definition.")
-
-    # this is performed after so that TLS gives a "guess"
-    if data1err is not None or data2err is not None:
-        try:
-            from scipy.odr import RealData,Model,ODR
-        except ImportError:
-            raise ImportError("Could not import scipy; cannot run Total Least Squares")
-
-        def linmodel(B,x):
-            if intercept:
-                return B[0]*x + B[1]
-            else:
-                return B[0]*x
-
-        if data1err is not None:
-            data1err = data1err[goodvals]
-            data1err[data1err<=0] = inf
-        if data2err is not None:
-            data2err = data2err[goodvals]
-            data2err[data2err<=0] = inf
-
-        if any([data1.shape != other.shape for other in (data2,data1err,data2err)]):
-            raise ValueError("Data shapes do not match")
-
-        linear = Model(linmodel)
-        data = RealData(data1,data2,sx=data1err,sy=data2err)
-        B = data2.mean() - M*data1.mean()
-        beta0 = [M,B] if intercept else [M]
-        myodr = ODR(data,linear,beta0=beta0)
-        output = myodr.run()
-
-        if print_results:
-            output.pprint()
-
-        if return_error:
-            return np.concatenate([output.beta,output.sd_beta])
-        else:
-            return output.beta
-
-
-
-    if intercept:
-        B = data2.mean() - M*data1.mean()
-        if print_results:
-            print "TLS Best fit y = %g x + %g" % (M,B)
-            print "The fit accounts for %0.3g%% of the variance." % (varfrac)
-            print "Chi^2 = %g, N = %i" % (((data2-(data1*M+B))**2).sum(),data1.shape[0]-2)
-        return M,B
-    else:
-        if print_results:
-            print "TLS Best fit y = %g x" % (M)
-            print "The fit accounts for %0.3g%% of the variance." % (varfrac)
-            print "Chi^2 = %g, N = %i" % (((data2-(data1*M))**2).sum(),data1.shape[0]-1)
-        return M
-
 
 
 
