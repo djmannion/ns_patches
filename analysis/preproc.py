@@ -7,6 +7,7 @@ import glob
 import numpy as np
 
 import fmri_tools.preproc, fmri_tools.utils
+import runcmd
 
 
 def convert( paths ):
@@ -109,7 +110,7 @@ def fieldmaps( conf, paths ):
                  epi_path
                ]
 
-    fmri_tools.utils.run_cmd( " ".join( mask_cmd ) )
+    runcmd.run_cmd( " ".join( mask_cmd ) )
 
     fmri_tools.preproc.make_fieldmap( mag_path = paths.fmap.mag.full(),
                                       ph_path = paths.fmap.ph.full(),
@@ -230,7 +231,7 @@ def vol_to_surf( conf, paths ):
                          "-overwrite"
                        ]
 
-            fmri_tools.utils.run_cmd( " ".join( surf_cmd ) )
+            runcmd.run_cmd( " ".join( surf_cmd ) )
 
             # convert to full
             full_path = surf_file.full( "_{h:s}-full.niml.dset".format( h = hemi ) )
