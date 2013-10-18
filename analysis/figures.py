@@ -6,68 +6,28 @@ import matplotlib.gridspec as gridspec
 import numpy as np
 
 import fmri_tools.utils
+import figutils
 
 import ns_patches.config, ns_patches.paths
 
 
-def _set_defaults():
-    """Set some sane defaults for figures.
-    """
-
-    params = { 'axes.labelsize': 9 * ( 1 / 1.25 ),
-               'axes.titlesize' : 10,
-               'font.family' : 'Arial',
-               'font.sans-serif' : 'Helvetica',
-               'text.fontsize': 12,
-               'legend.fontsize': 7,
-               'xtick.labelsize': 8 * ( 1 / 1.25 ),
-               'xtick.direction' : 'out',
-               'xtick.major.size' : 2,
-               'ytick.labelsize': 8 * ( 1 / 1.25 ),
-               'ytick.direction' : 'out',
-               'ytick.major.size' : 2
-             }
-    
-    plt.rcParams.update( params )
-
-    plt.ioff()
-
-
-def _cleanup_fig( ax ):
-    """Apply some standard commands to clean up the axes on figures.
-    """
-
-    for loc, spine in ax.spines.iteritems():
-
-        spine.set_linewidth( 0.5 )
-
-        if loc in [ "left", "bottom" ]:
-            spine.set_position( ( "outward", 5 ) )
-        elif loc in [ "right", "top" ]:
-            spine.set_color( "none" )
-        else:
-            raise ValueError( "Unknown spine location: %s" % loc )
-
-    ax.xaxis.set_ticks_position( "bottom" )
-    ax.yaxis.set_ticks_position( "left" )
-
-
 def id_stats():
 
-    all_conf = ns_patches.config.get_conf( None, False )
+    all_conf = ns_patches.config.get_conf( subj_id = None, no_loc = False )
 
     subj_ids = all_conf.all_subj.subj.keys()
     subj_ids.sort()
 
-    _set_defaults()
+    figutils.set_defaults()
 
     fig = plt.figure()
 
     fig.set_size_inches( 7.08661, 10, forward = False )
 
-    id_k = []
+    id_k = np.empty( ( len( subj_ids ), all_conf.exp.n_mod_patches ) )
+    id_k.fill( np.NAN )
 
-    for subj_id in subj_ids:
+    for ( i_subj, subj_id ) in enumerate( subj_ids ):
 
         subj_conf = ns_patches.config.get_conf( subj_id )
 
@@ -78,44 +38,26 @@ def id_stats():
 
         k = np.loadtxt( subj_paths.loc.patch_id_count.full( ".txt" ) )
 
-        id_k.append( k )
+        id_k[ i_subj, : ] = k
 
-    id_k = np.vstack( id_k )
+        if np.any( k == 0 ):
+            print "Subject " + subj_id + " has 0 node counts"
 
-    gs = gridspec.GridSpec( 2, 2 )
+    assert np.sum( np.isnan( id_k ) ) == 0
 
-    ax = plt.subplot( gs[ 0 ] )
-    ax.matshow( id_k, cmap = plt.gray(), clim = [ 0, 50 ] )
-    _cleanup_fig( ax )
-    ax.set_xlabel( "Patch" )
-    ax.set_ylabel( "Subject" )
+    gs = gridspec.GridSpec( 1, 2 )
 
+    for i_axis in xrange( 2 ):
 
-    ax = plt.subplot( gs[ 1 ] )
-    ax.plot( id_k.T )
-    _cleanup_fig( ax )
-    ax.set_xlabel( "Patch" )
-    ax.set_ylabel( "Node count" )
+        ax = plt.subplot( gs[ i_axis ] )
 
-    ax = plt.subplot( gs[ 2 ] )
-    ax.plot( np.mean( id_k, axis = 0 ) )
-    _cleanup_fig( ax )
-    ax.set_xlabel( "Patch" )
-    ax.set_ylabel( "Average nodes" )
+        mean_data = np.mean( id_k, axis = i_axis )
+        err_data = np.std( id_k, axis = i_axis, ddof = 1 ) / np.sqrt( id_k.shape[ i_axis ] )
 
-    ax = plt.subplot( gs[ 3 ] )
-    ax.plot( np.mean( id_k, axis = 1 ) )
-    _cleanup_fig( ax )
-    ax.set_xlabel( "Subject" )
-    ax.set_ylabel( "Average nodes" )
+        ax.plot( range( 1, len( mean_data ) + 1, mean_data )
 
-    plt.subplots_adjust( left = 0.07,
-                         bottom = 0.1,
-                         right = 0.98,
-                         top = 0.95,
-                         wspace = 0.2,
-                         hspace = 0.2
-                       )
+        figutils.cleanup_fig( ax )
+
 
     plt.show()
 
