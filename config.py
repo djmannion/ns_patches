@@ -91,7 +91,9 @@ def _get_ana_conf():
     ana_conf = ConfigContainer()
 
     ana_conf.exclude_subj_ids = [ "s1023" ]  # poor localisers
-    ana_conf.exclude_patch_ids = [ 18, 24 ]  # subj with < 5 nodes
+
+    # where( any( k < 10, axis = 0 ) ), after getting rid of ^
+    ana_conf.exclude_patch_ids = [ 8, 18, 19, 20, 24 ]
 
     return ana_conf
 

@@ -187,10 +187,10 @@ def get_group_paths( conf ):
 
     file_base = "ns_patches"
 
-    grp.regress_coef = grp.base + ( file_base + "-regress_coef" )
+    grp.patch_k = grp.base + ( file_base + "-patch_counts" )
 
-    grp.slope_t_p = grp.base + ( file_base + "-slope_t_p" )
-    grp.intercept_t_p = grp.base + ( file_base + "-intercept_t_p" )
+    grp.coh_summ = grp.base + ( file_base + "-coh_summ" )
+    grp.coh_diff_stats = grp.base + ( file_base + "-coh_diff_stats" )
 
     return grp
 

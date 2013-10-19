@@ -208,3 +208,25 @@ Distribute the patch information over image types::
 
 This results in ``${SUBJ_ID}_ns_patches-img_resp.npy``, which is a patch (26) x image (20) x run (8) x coherence (2) matrix.
 
+
+Group analysis
+==============
+
+Localiser stats
+~~~~~~~~~~~~~~~
+
+Calculates the number of nodes in each modulated patch for each subject. Output is a text file where rows are subjects (sorted) and columns are patches::
+
+    ns_patches_group_analysis patch_k
+
+
+Coherence summary
+~~~~~~~~~~~~~~~~~
+
+Extracts the average response for coherent and non-coherent stimuli for each valid subject and valid patch, and generates difference stats::
+
+    ns_patches_group_analysis coh_summ
+
+``coh_summ`` is subjects x [ coh, incoh ], and ``coh_diff_stats`` is [ diff mean, 2.5% CI, 97.5% CI ]
+
+
