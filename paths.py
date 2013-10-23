@@ -191,6 +191,7 @@ def get_group_paths( conf ):
 
     grp.coh_summ = grp.base + ( file_base + "-coh_summ" )
     grp.coh_diff_stats = grp.base + ( file_base + "-coh_diff_stats" )
+    grp.subj_data = grp.base + ( file_base + "-subj_data" )
 
     return grp
 

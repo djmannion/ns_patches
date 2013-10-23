@@ -50,7 +50,13 @@ def coh_summ( conf, paths ):
     data = np.empty( ( n_subj, 2 ) )
     data.fill( np.NAN )
 
+    # might as well save the data compiled together, too
+    all_data = np.empty( ( n_subj, 21, 20, 8, 2 ) )
+    all_data.fill( np.NAN )
+
     for ( i_subj, subj_id ) in enumerate( subj_ids ):
+
+        print i_subj, subj_id
 
         subj_conf = ns_patches.config.get_conf( subj_id )
         subj_paths = ns_patches.paths.get_subj_paths( subj_conf )
@@ -58,8 +64,13 @@ def coh_summ( conf, paths ):
         # this is patches x images x runs x type
         subj_data = np.load( subj_paths.ana.img_resp.full( ".npy" ) )
 
-        # average over patches - note the indexing
-        subj_data = np.mean( subj_data[ i_valid_patches, ... ], axis = 0 )
+        # cull the unwanted patches
+        subj_data = subj_data[ i_valid_patches, ... ]
+
+        all_data[ i_subj, ... ] = subj_data
+
+        # average over patches
+        subj_data = np.mean( subj_data, axis = 0 )
         # ... and images
         subj_data = np.mean( subj_data, axis = 0 )
         # ... and runs
@@ -67,8 +78,13 @@ def coh_summ( conf, paths ):
 
         data[ i_subj, : ] = subj_data
 
+    assert np.sum( np.isnan( all_data ) ) == 0
+    assert np.sum( np.isnan( data ) ) == 0
+
     # save it in a human-readable form, since we dont need the precision
     np.savetxt( paths.coh_summ.full( ".txt" ), data, fmt = "%.5f" )
+
+    np.save( paths.subj_data.full( ".npy" ), all_data )
 
     # ... because we're going to bootstrap now
 
