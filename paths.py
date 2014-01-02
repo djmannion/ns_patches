@@ -179,7 +179,7 @@ def _get_log_paths( conf, paths ):
     return logs
 
 
-def get_group_paths( conf ):
+def get_group_paths():
 
     grp = fmri_tools.paths.PathsHandler()
 

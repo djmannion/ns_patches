@@ -35,7 +35,8 @@ def main():
 
     # load the experiment / subject info
     conf = ns_patches.config.get_conf( None, True )
-    paths = ns_patches.paths.get_group_paths( conf )
+    conf = []
+    paths = ns_patches.paths.get_group_paths()
 
     if args.proc_step == "patch_k":
         ns_patches.analysis.group_analysis.loc_stats( conf, paths )
