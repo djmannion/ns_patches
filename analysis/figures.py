@@ -11,6 +11,97 @@ import figutils
 import ns_patches.config, ns_patches.paths
 
 
+def coh_diff_fig(conf, paths):
+
+    all_conf = ns_patches.config.get_conf(
+            subj_id=None,
+            subj_types="exp",
+            excl_subj_ids=conf.ana.exclude_subj_ids
+    )
+
+    paths = ns_patches.paths.get_group_paths()
+
+    ci = np.loadtxt(paths.coh_diff_stats.full(".txt"))
+
+    # n_subj x 2
+    coh_summ = np.loadtxt(paths.coh_summ.full(".txt"))
+
+    coh_diff = coh_summ[:,0] - coh_summ[:,1]
+
+    figutils.set_defaults()
+
+    font_params = {
+        "axes.labelsize": 24 * (1 / 1.25),
+        "xtick.labelsize": 22 * (1 / 1.25),
+        "ytick.labelsize": 22 * (1 / 1.25),
+    }
+
+    plt.rcParams.update(font_params)
+    plt.ioff()
+
+    fig = plt.figure()
+
+    fig.set_size_inches(13, 9.3, forward = True)
+
+    ax = plt.subplot(111)
+
+    ms = 16
+
+    ax.plot(
+        range(3, coh_summ.shape[0] + 3),
+        coh_diff,
+        markerfacecolor="k",
+        markeredgecolor="w",
+        marker="o",
+        linestyle="None",
+        markersize=ms * 0.75
+    )
+
+    ax.hold(True)
+
+    ax.plot(
+        [0.5]*2,
+        ci[1:],
+        color="k",
+        markersize=ms
+    )
+
+    ax.plot(
+        [0.5],
+        ci[0],
+        markerfacecolor="k",
+        marker="s",
+        markeredgecolor="w",
+        markersize=ms,
+        markeredgewidth=3
+    )
+
+    ax.plot(
+        [-1,11.5],
+        [0, 0],
+        color="k",
+        linestyle="--"
+    )
+
+    figutils.cleanup_fig(ax)
+
+    ax.set_xlim(-1, 11.5)
+
+    ax.set_xticks([0.5]+range(3,coh_summ.shape[0] + 3))
+
+    ax.set_xticklabels(
+        ["Mean"] +
+        ["P{n:d}".format(n = n) for n in range(1, coh_summ.shape[0] + 1)]
+    )
+
+    ax.set_xlabel("Participant")
+    ax.set_ylabel("Consistent - inconsistent (psc)")
+
+    plt.show()
+
+
+
+
 def id_stats():
 
     all_conf = ns_patches.config.get_conf( subj_id = None, subj_types = "loc" )
