@@ -392,4 +392,250 @@ def image_resp( conf, paths ):
     np.save( paths.ana.img_resp.full( "-control.npy" ), control_resp )
 
 
+def _get_coh_timing(conf, paths, patch_id):
+
+    coh_timing = []
+    incoh_timing = []
+
+    for run_num in xrange(1, conf.subj.n_runs + 1):
+
+        coh_run_timing = []
+        incoh_run_timing = []
+
+        run_log = _load_run_log(run_num, paths)
+
+        # n_trials long
+        run_seq = run_log["seq"]
+
+        # patch IDs x trials - each shows the image ID
+        img_trials = run_log["img_trials"]
+
+        # the ID of the 'coherent' image on each trial
+        coh_ids = scipy.stats.mode(img_trials, axis=0)[0][0].astype("int")
+
+        # extract the image IDs for the desired patch
+        patch_img_ids = img_trials[patch_id, :].astype("int")
+
+        # just check we've pulled out what we think we have
+        assert len(coh_ids) == len(run_seq)
+
+        for (coh_img_id, patch_img_id, trial_seq) in zip(coh_ids, patch_img_ids, run_seq):
+
+            if coh_img_id == patch_img_id:
+                coh_run_timing.append(trial_seq)
+            else:
+                incoh_run_timing.append(trial_seq)
+
+        coh_timing.append(coh_run_timing)
+        incoh_timing.append(incoh_run_timing)
+
+    return (coh_timing, incoh_timing)
+
+
+def coh_glm(conf, paths):
+
+    patch_ids = np.setdiff1d(
+        conf.exp.mod_patches,
+        conf.ana.exclude_patch_ids
+    )
+
+    for patch_id in patch_ids:
+        _run_coh_glm(conf, paths, patch_id)
+
+    vf_lookup = {"lh": "R", "rh": "L"}
+
+    # combine all into one
+    for hemi in ["lh", "rh"]:
+
+        comb_cmd = [
+            "3dMean",
+            "-non_zero",
+            "-sum",
+            "-prefix", paths.coh_ana.comb.full("_" + hemi + "-full.niml.dset"),
+            "-overwrite"
+        ]
+
+        for patch_id in patch_ids:
+
+            if conf.stim.patches[patch_id]["vf"] == vf_lookup[hemi]:
+
+                comb_cmd.append(
+                    paths.coh_ana.glm.file("-patch_{n:d}".format(n=patch_id) + "_" + hemi + "-full.niml.dset")
+                )
+
+        runcmd.run_cmd(" ".join(comb_cmd))
+
+
+#    buck_file = paths.coh_ana.glm.file("-patch_{n:d}".format(n=patch_id) + hemi_ext + "-full.niml.dset")
+
+
+def _run_coh_glm(conf, paths, patch_id):
+    "Run the coh/incoh GLM for a given patch"
+
+    os.chdir(paths.coh_ana.base.full())
+
+    if conf.stim.patches[patch_id]["vf"] == "L":
+        hemi = "rh"
+    else:
+        hemi = "lh"
+
+    hemi_ext = "_" + hemi
+
+    # [coh, incoh]
+    timings = _get_coh_timing(conf, paths, patch_id)
+
+    # write patch timings
+    for (cond, cond_name) in zip(timings, ["coh", "incoh"]):
+
+        cond_path = paths.coh_ana.stim_times.full(
+            "-patch_{n:d}_{c:s}.txt".format(n=patch_id, c=cond_name)
+        )
+
+        with open(cond_path, "w") as cond_file:
+
+            for run_cond in cond:
+
+                cond_file.write("\t".join(["{t:d}".format(t=x) for x in run_cond]))
+                cond_file.write("\n")
+
+    # write out the mask
+    loc_id = conf.subj.subj_id + "_loc"
+    loc_conf = ns_patches.config.get_conf(loc_id)
+    loc_paths = ns_patches.paths.get_subj_paths(loc_conf)
+
+    id_path = loc_paths.loc.patch_id_thr.full(
+        "_{h:s}-full_Clustered_e1_a{n:.01f}.niml.dset".format(
+            h=hemi,
+            n=conf.loc.area_thr
+        )
+    )
+
+    mask_path = paths.coh_ana.mask.full("-patch_{n:d}".format(n=patch_id) + hemi_ext + "-full.niml.dset")
+
+    mask_cmd = [
+        "3dcalc",
+        "-a", id_path,
+        "-expr", "equals(a,{x:d})".format(x=patch_id + 1),
+        "-prefix", mask_path,
+        "-overwrite"
+    ]
+
+    runcmd.run_cmd(" ".join(mask_cmd))
+
+    # right-o, ready for the GLM
+    censor_vols = conf.exp.n_censor_vols - 1
+    censor_str = "*:0-{v:.0f}".format(v=censor_vols)
+
+    model_str = "SPMG1({d:.0f})".format(d=conf.exp.img_on_s)
+#    model_str = "TENT(0,30,16)"  # useful as a sanity-check
+
+    glm_cmd = [
+        "3dDeconvolve",
+        "-input"
+    ]
+
+    surf_paths = [
+        surf_path.full(hemi_ext + "-full.niml.dset")
+        for surf_path in paths.func.surfs
+    ]
+
+    glm_cmd.extend(surf_paths)
+
+    glm_cmd.extend(
+        [
+            "-force_TR", "{tr:.3f}".format(tr=conf.acq.tr_s),
+            "-polort", "a",  # auto baseline degree
+            "-mask", mask_path,
+            "-CENSORTR", censor_str,
+            "-xjpeg", "exp_design_patch_{x:d}.png".format(x=patch_id),
+            "-x1D", "exp_design_patch_{x:d}".format(x=patch_id),
+            "-overwrite",
+#            "-x1D_stop",  # want to use REML, so don't bother running
+            "-num_stimts", "2"
+        ]
+    )
+
+    for (i_cond, cond_name) in enumerate(["coh", "incoh"]):
+
+        glm_cmd.extend(["-stim_label", "{x:d}".format(x=i_cond + 1), cond_name])
+
+        glm_cmd.extend(
+            [
+                "-stim_times",
+                "{x:d}".format(x=i_cond + 1),
+                paths.coh_ana.stim_times.full(
+                    "-patch_{n:d}_{c:s}.txt".format(n=patch_id, c=cond_name)
+                ),
+                model_str
+            ]
+        )
+
+    con_str = "SYM: +coh -incoh"
+
+    glm_cmd.extend(
+        [
+            "-gltsym", "'" + con_str + "'",
+            "-glt_label", "1", "coh_gt_incoh"
+        ]
+    )
+
+    beta_file = paths.coh_ana.beta.file("-patch_{n:d}".format(n=patch_id) + hemi_ext + "-full.niml.dset")
+    buck_file = paths.coh_ana.glm.file("-patch_{n:d}".format(n=patch_id) + hemi_ext + "-full.niml.dset")
+    resp_files = [
+        paths.coh_ana.resp.file("-patch_{n:d}_{c:s}".format(n=patch_id,c=cond_name) + hemi_ext + "-full.niml.dset")
+        for cond_name in ["coh", "incoh"]
+    ]
+
+
+    glm_cmd.extend(
+        [
+            "-bucket", buck_file,
+            "-cbucket", beta_file
+        ]
+    )
+
+    glm_cmd.extend(
+        [
+            "-iresp", "1", resp_files[0],
+            "-iresp", "2", resp_files[1]
+        ]
+    )
+
+    runcmd.run_cmd(" ".join(glm_cmd))
+
+#    os.remove("Decon.REML_cmd")
+#
+    reml_cmd = [
+        "3dREMLfit",
+        "-matrix", "exp_design_patch_{x:d}.xmat.1D".format(x=patch_id),
+        "-mask", mask_path,
+        "-Rbeta", beta_file,
+        "-tout",
+        "-Rbuck", buck_file,
+        "-overwrite",
+        "-input"
+    ]
+
+    reml_cmd.append("'" + " ".join(surf_paths) + "'")
+
+    # run the proper GLM
+#    runcmd.run_cmd(" ".join(reml_cmd))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
