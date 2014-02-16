@@ -26,11 +26,8 @@ def main():
                          help = "Subject identifier"
                        )
 
-    proc_steps = ( "glm",
-                   "beta_to_psc",
-                   "patch_dump",
-                   "image_resp",
-                   "coh_glm"
+    proc_steps = ( "coh_glm",
+                   "data_dump"
                  )
 
     parser.add_argument( "proc_step",
@@ -61,20 +58,11 @@ def main():
 
     logger.addHandler( scr_log )
 
-    if args.proc_step == "glm":
-        ns_patches.analysis.analysis.glm( conf, paths )
+    if args.proc_step == "coh_glm":
+        ns_patches.analysis.analysis.coh_glm( conf, paths )
 
-    elif args.proc_step == "beta_to_psc":
-        ns_patches.analysis.analysis.beta_to_psc( conf, paths )
-
-    elif args.proc_step == "patch_dump":
-        ns_patches.analysis.analysis.patch_dump( conf, paths )
-
-    elif args.proc_step == "image_resp":
-        ns_patches.analysis.analysis.image_resp( conf, paths )
-
-    elif args.proc_step == "coh_glm":
-        ns_patches.analysis.analysis.coh_glm(conf, paths)
+    elif args.proc_step == "data_dump":
+        ns_patches.analysis.analysis.data_dump( conf, paths )
 
     else:
         print "Not implemented"
