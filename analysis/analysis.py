@@ -465,6 +465,22 @@ def coh_glm(conf, paths):
 
         runcmd.run_cmd(" ".join(comb_cmd))
 
+        dump_path = paths.coh_ana.comb.full("_" + hemi + ".txt")
+
+        if os.path.exists(dump_path):
+            os.remove(dump_path)
+
+        # write out the text file
+        dump_cmd = [
+            "3dmaskdump",
+            "-o", paths.coh_ana.comb.full("_" + hemi + ".txt"),
+            "-nozero",
+            "-noijk",
+            paths.coh_ana.comb.full("_" + hemi + "-full.niml.dset")
+        ]
+
+        runcmd.run_cmd(" ".join(dump_cmd))
+
 
 #    buck_file = paths.coh_ana.glm.file("-patch_{n:d}".format(n=patch_id) + hemi_ext + "-full.niml.dset")
 
