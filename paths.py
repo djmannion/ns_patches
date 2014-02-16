@@ -157,6 +157,7 @@ def _get_coh_ana_paths( conf, paths ):
     ana.beta = ana.base + ( file_base + "beta" )
     ana.resp = ana.base + ( file_base + "resp" )
     ana.comb = ana.base + (file_base + "comb")
+    ana.glm_comb = ana.base + (file_base + "glm_comb")
 
     ana.bltc = ana.base + ( file_base + "bltc" )
     ana.bl = ana.base + ( file_base + "bl" )

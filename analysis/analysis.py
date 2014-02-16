@@ -125,22 +125,6 @@ def coh_glm(conf, paths):
 
         runcmd.run_cmd(" ".join(comb_cmd))
 
-        dump_path = paths.coh_ana.comb.full("_" + hemi + ".txt")
-
-        if os.path.exists(dump_path):
-            os.remove(dump_path)
-
-        # write out the text file
-        dump_cmd = [
-            "3dmaskdump",
-            "-o", paths.coh_ana.comb.full("_" + hemi + ".txt"),
-            "-nozero",
-            "-noijk",
-            paths.coh_ana.comb.full("_" + hemi + "-full.niml.dset")
-        ]
-
-        runcmd.run_cmd(" ".join(dump_cmd))
-
 
 def _run_coh_glm(conf, paths, patch_id):
     "Run the coh/incoh GLM for a given patch"
@@ -321,3 +305,94 @@ def _run_coh_glm(conf, paths, patch_id):
         bl_path,
         psc_path,
     )
+
+
+def data_dump(conf, paths):
+    "Dump all the relevant data to a single text file"
+
+    # ingredients:
+    #   -node coordinates
+    #   -patch IDp
+    #   -all > blank from GLM
+    #   -coherent PSC
+    #   -incoherent PSC
+
+    patch_ids = np.setdiff1d(
+        conf.exp.mod_patches,
+        conf.ana.exclude_patch_ids
+    )
+
+    vf_lookup = {"lh": "R", "rh": "L"}
+
+    # open it this way so that we can write to it twice and it will append
+    dump_handle = open(paths.coh_ana.comb.full(".txt"), "w")
+
+    os.chdir(paths.coh_ana.base.full())
+
+    for hemi in ["lh", "rh"]:
+
+        hemi_ext = "_" + hemi
+
+        glm_comb_path = paths.coh_ana.glm_comb.full(
+            hemi_ext + "-full.niml.dset"
+        )
+
+        # first, want to combine all the GLM data together
+        comb_cmd = [
+            "3dMean",
+            "-non_zero",
+            "-sum",
+            "-prefix", glm_comb_path,
+            "-overwrite"
+        ]
+
+        for patch_id in patch_ids:
+
+            if conf.stim.patches[patch_id]["vf"] == vf_lookup[hemi]:
+
+                buck_file = paths.coh_ana.glm.full(
+                    "-patch_{n:d}".format(n=patch_id) +
+                    hemi_ext +
+                    "-full.niml.dset" +
+                    "[6]"
+                )
+
+                comb_cmd.append(buck_file)
+
+        runcmd.run_cmd(" ".join(comb_cmd))
+
+        psc_comb_path = paths.coh_ana.comb.full(hemi_ext + "-full.niml.dset")
+
+        # now we need to know the patch IDs
+        loc_id = conf.subj.subj_id + "_loc"
+        loc_conf = ns_patches.config.get_conf(loc_id)
+        loc_paths = ns_patches.paths.get_subj_paths(loc_conf)
+
+        id_path = loc_paths.loc.patch_id_thr.full(
+            "_{h:s}-full_Clustered_e1_a{n:.01f}.niml.dset".format(
+                h=hemi,
+                n=conf.loc.area_thr
+            )
+        )
+
+        dump_path = paths.coh_ana.comb.full(hemi_ext + ".txt")
+
+        if os.path.exists(dump_path):
+            os.remove(dump_path)
+
+        # now we have all our ingredients, we can write out the text file
+        dump_cmd = [
+            "3dmaskdump",
+            "-o", dump_path,
+            "-mask", psc_comb_path,
+            id_path,
+            glm_comb_path,
+            psc_comb_path
+        ]
+
+        runcmd.run_cmd(" ".join(dump_cmd))
+
+        # concatenate across hemis
+        np.savetxt(dump_handle, np.loadtxt(dump_path))
+
+    dump_handle.close()
