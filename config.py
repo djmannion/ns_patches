@@ -93,7 +93,7 @@ def _get_ana_conf():
     ana_conf.exclude_subj_ids = [ "s1023" ]  # poor localisers
 
     # where( any( k < 10, axis = 0 ) ), after getting rid of ^
-    ana_conf.exclude_patch_ids = [ 8, 18, 19, 20, 24 ]
+    ana_conf.exclude_patch_ids = [ 8, 18, 20, 21, 26 ]
 
     return ana_conf
 

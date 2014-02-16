@@ -460,7 +460,7 @@ def coh_glm(conf, paths):
             if conf.stim.patches[patch_id]["vf"] == vf_lookup[hemi]:
 
                 comb_cmd.append(
-                    paths.coh_ana.glm.file("-patch_{n:d}".format(n=patch_id) + "_" + hemi + "-full.niml.dset")
+                    paths.coh_ana.psc.file("-patch_{n:d}".format(n=patch_id) + "_" + hemi + "-full.niml.dset")
                 )
 
         runcmd.run_cmd(" ".join(comb_cmd))
@@ -476,6 +476,7 @@ def coh_glm(conf, paths):
             "-o", paths.coh_ana.comb.full("_" + hemi + ".txt"),
             "-nozero",
             "-noijk",
+#            paths.coh_ana.glm.full("-patch_{n:d}".format(n=patch_id) + "_" + hemi + "-full.niml.dset[6]"),
             paths.coh_ana.comb.full("_" + hemi + "-full.niml.dset")
         ]
 
@@ -566,7 +567,7 @@ def _run_coh_glm(conf, paths, patch_id):
             "-xjpeg", "exp_design_patch_{x:d}.png".format(x=patch_id),
             "-x1D", "exp_design_patch_{x:d}".format(x=patch_id),
             "-overwrite",
-#            "-x1D_stop",  # want to use REML, so don't bother running
+            "-x1D_stop",  # want to use REML, so don't bother running
             "-num_stimts", "2"
         ]
     )
@@ -586,41 +587,41 @@ def _run_coh_glm(conf, paths, patch_id):
             ]
         )
 
-    con_str = "SYM: +coh -incoh"
+    con_str = "SYM: +coh +incoh"
 
     glm_cmd.extend(
         [
             "-gltsym", "'" + con_str + "'",
-            "-glt_label", "1", "coh_gt_incoh"
+            "-glt_label", "1", "all_gt_bl"
         ]
     )
 
-    beta_file = paths.coh_ana.beta.file("-patch_{n:d}".format(n=patch_id) + hemi_ext + "-full.niml.dset")
-    buck_file = paths.coh_ana.glm.file("-patch_{n:d}".format(n=patch_id) + hemi_ext + "-full.niml.dset")
-    resp_files = [
-        paths.coh_ana.resp.file("-patch_{n:d}_{c:s}".format(n=patch_id,c=cond_name) + hemi_ext + "-full.niml.dset")
-        for cond_name in ["coh", "incoh"]
-    ]
+    beta_file = paths.coh_ana.beta.full("-patch_{n:d}".format(n=patch_id) + hemi_ext + "-full.niml.dset")
+    buck_file = paths.coh_ana.glm.full("-patch_{n:d}".format(n=patch_id) + hemi_ext + "-full.niml.dset")
+#    resp_files = [
+#        paths.coh_ana.resp.file("-patch_{n:d}_{c:s}".format(n=patch_id,c=cond_name) + hemi_ext + "-full.niml.dset")
+#        for cond_name in ["coh", "incoh"]
+#    ]
 
 
-    glm_cmd.extend(
-        [
-            "-bucket", buck_file,
-            "-cbucket", beta_file
-        ]
-    )
+#    glm_cmd.extend(
+#        [
+#            "-bucket", buck_file,
+#            "-cbucket", beta_file
+#        ]
+#    )
 
-    glm_cmd.extend(
-        [
-            "-iresp", "1", resp_files[0],
-            "-iresp", "2", resp_files[1]
-        ]
-    )
+#    glm_cmd.extend(
+#        [
+#            "-iresp", "1", resp_files[0],
+#            "-iresp", "2", resp_files[1]
+#        ]
+#    )
 
     runcmd.run_cmd(" ".join(glm_cmd))
 
-#    os.remove("Decon.REML_cmd")
-#
+    os.remove("Decon.REML_cmd")
+
     reml_cmd = [
         "3dREMLfit",
         "-matrix", "exp_design_patch_{x:d}.xmat.1D".format(x=patch_id),
@@ -635,7 +636,30 @@ def _run_coh_glm(conf, paths, patch_id):
     reml_cmd.append("'" + " ".join(surf_paths) + "'")
 
     # run the proper GLM
-#    runcmd.run_cmd(" ".join(reml_cmd))
+    runcmd.run_cmd(" ".join(reml_cmd))
+
+    design_path = "exp_design_patch_{x:d}.xmat.1D".format(x=patch_id)
+
+    # to write
+    ext = "-patch_{n:d}".format(n=patch_id) + hemi_ext + "-full.niml.dset"
+    bltc_path = paths.coh_ana.bltc.file(ext)
+    bl_path = paths.coh_ana.bl.file(ext)
+    psc_path = paths.coh_ana.psc.file(ext)
+
+    # 4 orthogonal polynomial regressors per run
+    n_nuisance = conf.subj.n_runs * 4
+
+    # checked via '-verb'
+    beta_bricks = "[{n:d}..$]".format(n=n_nuisance)
+
+    fmri_tools.utils.beta_to_psc(
+        beta_file,
+        beta_bricks,
+        design_path,
+        bltc_path,
+        bl_path,
+        psc_path,
+    )
 
 
 
