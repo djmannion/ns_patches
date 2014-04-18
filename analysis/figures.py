@@ -8,7 +8,7 @@ import numpy as np
 import fmri_tools.utils
 import figutils
 
-import ns_patches.config, ns_patches.paths
+import ns_patches.config, ns_patches.paths, ns_patches.analysis.group_analysis
 
 
 def coh_diff_fig(conf, paths):
@@ -21,12 +21,13 @@ def coh_diff_fig(conf, paths):
 
     paths = ns_patches.paths.get_group_paths()
 
-    ci = np.loadtxt(paths.coh_diff_stats.full(".txt"))
+    coh_summ = ns_patches.analysis.group_analysis.patch_summ(all_conf, paths)
 
-    # n_subj x 2
-    coh_summ = np.loadtxt(paths.coh_summ.full(".txt"))
+    coh_diff = np.mean(coh_summ, axis=1)
 
-    coh_diff = coh_summ[:,0] - coh_summ[:,1]
+    std_err = np.std(coh_diff) / np.sqrt(len(coh_diff))
+
+    ci = [np.mean(coh_diff), np.mean(coh_diff) - std_err, np.mean(coh_diff) + std_err]
 
     figutils.set_defaults()
 

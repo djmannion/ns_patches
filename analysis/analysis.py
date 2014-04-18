@@ -307,12 +307,90 @@ def _run_coh_glm(conf, paths, patch_id):
     )
 
 
+def _patch_cent_dist(conf, paths, patch_id):
+    "Write the distance of each node in a patch to its centre"
+
+    os.chdir(paths.coh_ana.base.full())
+
+    # contralateral organisation
+    if conf.stim.patches[patch_id]["vf"] == "L":
+        hemi = "rh"
+    else:
+        hemi = "lh"
+
+    hemi_ext = "_" + hemi
+
+    mask_path = paths.coh_ana.mask.full(
+        "-patch_{n:d}".format(n=patch_id) +
+        hemi_ext +
+        "-full.niml.dset"
+    )
+
+    centre_node = fmri_tools.utils.get_centre_node(
+        surf_dset=mask_path,
+        spec_path=paths.reg.spec.full(hemi_ext + ".spec"),
+        calc_surf="pial"
+    )
+
+    fmri_tools.utils.write_dist_to_centre(
+        centre_node=centre_node,
+        in_dset=mask_path,
+        spec_path=paths.reg.spec.full(hemi_ext + ".spec"),
+        dist_dset=paths.coh_ana.patch_dist.file(
+            "-patch_{n:d}".format(n=patch_id) +
+            hemi_ext
+        ),
+        pad_to=str(conf.subj.node_k[hemi]),
+        inc_centre_node=True,
+        calc_surf="pial"
+    )
+
+
+def centre_distances(conf, paths):
+    "Write the distance of each node to its patch centre"
+
+    for patch_id in conf.ana.valid_patch_ids:
+        _patch_cent_dist(conf, paths, patch_id)
+
+    os.chdir(paths.coh_ana.base.full())
+
+    # now to combine
+    vf_lookup = {"lh": "R", "rh": "L"}
+
+    # combine all into one
+    for hemi in ["lh", "rh"]:
+
+        comb_cmd = [
+            "3dMean",
+            "-non_zero",
+            "-sum",
+            "-prefix", paths.coh_ana.patch_dist.full("_" + hemi + "-full.niml.dset"),
+            "-overwrite"
+        ]
+
+        for patch_id in conf.ana.valid_patch_ids:
+
+            if conf.stim.patches[patch_id]["vf"] == vf_lookup[hemi]:
+
+                comb_cmd.append(
+                    paths.coh_ana.patch_dist.file(
+                        "-patch_{n:d}".format(n=patch_id) +
+                        "_" + hemi +
+                        ".niml.dset"
+                    )
+                )
+
+        runcmd.run_cmd(" ".join(comb_cmd))
+
+
+
 def data_dump(conf, paths):
     "Dump all the relevant data to a single text file"
 
     # ingredients:
     #   -node coordinates
     #   -patch IDp
+    #   -patch centre dist
     #   -all > blank from GLM
     #   -coherent PSC
     #   -incoherent PSC
@@ -386,6 +464,7 @@ def data_dump(conf, paths):
             "-o", dump_path,
             "-mask", psc_comb_path,
             id_path,
+            paths.coh_ana.patch_dist.full("_" + hemi + "-full.niml.dset"),
             glm_comb_path,
             psc_comb_path
         ]
