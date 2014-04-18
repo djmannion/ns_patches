@@ -166,7 +166,7 @@ def _get_coh_ana_paths( conf, paths ):
     ana.vl = ana.base + ( file_base + "vis_loc_rois" )
     ana.mask = ana.base + ( file_base + "mask" )
 
-    ana.patch_resp = ana.base + ( file_base + "patch_resp" )
+    ana.patch_dist = ana.base + ( file_base + "patch_dist" )
 
     ana.img_resp = ana.base + ( file_base + "img_resp" )
 

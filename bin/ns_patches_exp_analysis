@@ -27,6 +27,7 @@ def main():
                        )
 
     proc_steps = ( "coh_glm",
+                   "patch_dist",
                    "data_dump"
                  )
 
@@ -60,6 +61,9 @@ def main():
 
     if args.proc_step == "coh_glm":
         ns_patches.analysis.analysis.coh_glm( conf, paths )
+
+    elif args.proc_step == "patch_dist":
+        ns_patches.analysis.analysis.centre_distances( conf, paths )
 
     elif args.proc_step == "data_dump":
         ns_patches.analysis.analysis.data_dump( conf, paths )

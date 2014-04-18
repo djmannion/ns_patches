@@ -26,7 +26,7 @@ def get_conf( subj_id = None, subj_types = "all", excl_subj_ids = None ):
     conf.acq = _get_acq_conf()
     conf.exp = _get_exp_conf( conf )
     conf.loc = _get_loc_conf( conf )
-    conf.ana = _get_ana_conf()
+    conf.ana = _get_ana_conf(conf)
     conf.all_subj = _get_subj_conf( None, subj_types, excl_subj_ids )
 
     if subj_id is not None:
@@ -86,7 +86,7 @@ def _get_exp_conf( conf ):
     return exp_conf
 
 
-def _get_ana_conf():
+def _get_ana_conf(conf):
 
     ana_conf = ConfigContainer()
 
@@ -94,6 +94,14 @@ def _get_ana_conf():
 
     # where( any( k < 10, axis = 0 ) ), after getting rid of ^
     ana_conf.exclude_patch_ids = [ 8, 18, 20, 21, 26 ]
+
+    ana_conf.valid_patch_ids = np.setdiff1d(
+        conf.exp.mod_patches,
+        ana_conf.exclude_patch_ids
+    )
+
+    # threshold all > blank at p < 0.05 (one-tailed)
+    ana_conf.all_t_thresh = 1.65
 
     return ana_conf
 
