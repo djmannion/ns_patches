@@ -11,6 +11,106 @@ import figutils
 import ns_patches.config, ns_patches.paths, ns_patches.analysis.group_analysis
 
 
+def ecc_diff_fig(conf, paths):
+
+    all_conf = ns_patches.config.get_conf(
+            subj_id=None,
+            subj_types="exp",
+            excl_subj_ids=conf.ana.exclude_subj_ids
+    )
+
+    paths = ns_patches.paths.get_group_paths()
+
+    coh_summ = ns_patches.analysis.group_analysis.patch_summ(all_conf, paths)
+
+    patch_ids = np.setdiff1d(
+        conf.exp.mod_patches,
+        conf.ana.exclude_patch_ids
+    )
+
+    ring_ids = conf.stim.patches[patch_ids]["ring"]
+
+    ring_diff = np.zeros(3)
+    ring_err = np.zeros(3)
+
+    for i_ring in xrange(3):
+
+        ring_patches = ring_ids == i_ring
+
+        ring_data = coh_summ[:, ring_patches]
+
+        ring_diff[i_ring] = np.mean(ring_data)
+
+        ring_mean = np.mean(ring_data, axis=1)
+
+        ring_err[i_ring] = np.std(ring_mean, ddof=1) / np.sqrt(len(ring_mean))
+
+
+    figutils.set_defaults()
+
+    font_params = {
+        "axes.labelsize": 24 * (1 / 1.25),
+        "xtick.labelsize": 22 * (1 / 1.25),
+        "ytick.labelsize": 22 * (1 / 1.25),
+    }
+
+    plt.rcParams.update(font_params)
+    plt.ioff()
+
+    fig = plt.figure()
+
+    fig.set_size_inches(13, 9.3, forward = True)
+
+    ax = plt.subplot(111)
+
+    ring_ecc_degs = [1.8, 3.5, 6.1]
+
+    for (i_ring, ring_ecc_deg) in enumerate(ring_ecc_degs):
+
+        ax.plot(
+            [ring_ecc_deg] * 2,
+            [
+                ring_diff[i_ring] - ring_err[i_ring],
+                ring_diff[i_ring] + ring_err[i_ring]
+            ],
+            color="k",
+            markersize=16
+        )
+
+        ax.plot([0,7], [0, 0], "k--")
+
+        ax.hold(True)
+
+        ax.plot(
+            ring_ecc_deg,
+            ring_diff[i_ring],
+            markerfacecolor="k",
+            marker="s",
+            markeredgecolor="w",
+            markersize=16,
+            markeredgewidth=3
+        )
+
+    figutils.cleanup_fig(ax)
+
+    ax.set_xlim(0, 7)
+    ax.set_ylim(-0.02, 0.16)
+
+#    ax.set_xlim(-1, 11.5)
+
+#    ax.set_xticks([0.5]+range(3,coh_summ.shape[0] + 3))
+
+#    ax.set_xticklabels(
+#        ["Mean"] +
+#        ["P{n:d}".format(n = n) for n in range(1, coh_summ.shape[0] + 1)]
+#    )
+
+    ax.set_xlabel("Patch eccenticity (deg visual angle)")
+    ax.set_ylabel("Consistent - inconsistent (psc)")
+
+    plt.show()
+
+
 def coh_diff_fig(conf, paths):
 
     all_conf = ns_patches.config.get_conf(
@@ -25,7 +125,7 @@ def coh_diff_fig(conf, paths):
 
     coh_diff = np.mean(coh_summ, axis=1)
 
-    std_err = np.std(coh_diff) / np.sqrt(len(coh_diff))
+    std_err = np.std(coh_diff, ddof=1) / np.sqrt(len(coh_diff))
 
     ci = [np.mean(coh_diff), np.mean(coh_diff) - std_err, np.mean(coh_diff) + std_err]
 
