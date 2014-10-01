@@ -1,14 +1,21 @@
 
 import os, os.path
 
+import figutils
+import matplotlib
+figutils.set_defaults()
+
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import matplotlib.gridspec as gridspec
 import numpy as np
+import scipy.stats
 
 import fmri_tools.utils
 import figutils
 
 import ns_patches.config, ns_patches.paths, ns_patches.analysis.group_analysis
+import ns_patches.analysis.analysis
 
 
 def ecc_diff_fig(conf, paths):
@@ -259,87 +266,112 @@ def id_stats():
 
 
 
-def all_subj_scatter():
+def plot_aperture_images(run_log_path, i_aperture):
 
-    all_conf = ns_patches.config.get_conf( None, True )
+    conf = ns_patches.config.get_conf(subj_id=subj_id, subj_types="exp")
 
-    subj_ids = all_conf.all_subj.subj.keys()
+    run_log = np.load(run_log_path)
 
-    _set_defaults()
+    # this is (aperture x trials), where trials is between 80 and 88,
+    # depending on how many null events there are in the pre-period
+    img_trials = run_log["img_trials"]
 
-    fig = plt.figure()
+    # need to find out which is the 'coherent' image on each trial
+    (coh_ids, coh_counts) = scipy.stats.mode(img_trials, axis=0)
 
-    fig.set_size_inches( 7.08661, 10, forward = True )
+    assert np.all(
+        coh_counts == (conf.stim.n_patches - conf.exp.n_incoh_patches)
+    )
 
-    gs = gridspec.GridSpec( 3, 3 )
+    coh_ids = coh_ids[0].astype("int")
+    coh_ids = coh_ids[-conf.exp.n_trials:]
 
-    for ( i_subj, subj_id ) in enumerate( subj_ids ):
+    # restrict it to the aperture
+    ap_trials = img_trials[i_aperture, :]
+    # and to the trial sequence
+    ap_trials = ap_trials[-conf.exp.n_trials:]
 
-        conf = ns_patches.config.get_conf( subj_id )
+    assert len(coh_ids) == len(ap_trials)
 
-        paths = ns_patches.paths.get_subj_paths( conf )
+    run_mat = np.zeros((len(ap_trials), conf.exp.n_img))
 
-        ax = plt.subplot( gs[ i_subj ] )
+    for (i_trial, (trial_img, trial_coh_img)) in enumerate(
+        zip(ap_trials, coh_ids)
+    ):
 
-        ax.hold( True )
+        if trial_img == trial_coh_img:
+            trial_type = +1
+        else:
+            trial_type = -1
 
-        # patches x ( coh, non-coh )
-        data = np.loadtxt( paths.ana.vec_resp.full( ".txt" ) )
+        run_mat[i_trial, trial_img] = trial_type
 
-        # slope, intercept
-        coef = np.loadtxt( paths.ana.regress.full( ".txt" ) )
+    fig = plt.figure(figsize=[3.3, 4], frameon=False)
 
-        ax.scatter( data[ :, 0 ],
-                    data[ :, 1 ],
-                    facecolors = "None",
-                    edgecolors = "k"
-                  )
+    x_off = 0.13
+    y_off = 0.15
 
-        _cleanup_fig( ax )
+    ax = plt.Axes(
+            fig=fig,
+            rect=[x_off, y_off, 0.97 - x_off, 0.97 - y_off],
+            frameon=False
+    )
 
-        xlim = plt.xlim()
-        ylim = plt.ylim()
+    fig.add_axes(ax)
 
-        max = np.max( [ xlim, ylim ] )
-        min = np.min( [ xlim, ylim ] )
+    ax.hold(True)
 
-        # axis line
-        ax.plot( [ min, max ], [ 0, 0 ], color = [ 0.5 ] * 3 )
-        ax.plot( [ 0, 0 ], [ min, max ], color = [ 0.5 ] * 3 )
+    ax.matshow(
+        run_mat,
+        aspect=0.3,
+        interpolation="none",
+        cmap="gray"
+    )
 
-        # unity line
-        ax.plot( [ min, max ], [ min, max ], "b--" )
+    ax.set_xticks(np.arange(0, 21) - 0.5, minor=True)
+    ax.set_yticks(np.arange(0, 81) - 0.5, minor=True)
 
-        fit_x = np.linspace( min, max, 100 )
+    ax.set_xticklabels([])
 
-        lin_fit = np.polyval( coef, fit_x )
+    ax.tick_params(
+            axis="both",
+            direction="out",
+            right="off",
+            bottom="off",
+            top="off"
+    )
 
-        ax.plot( fit_x, lin_fit, "g" )
+    ax.tick_params(
+            axis="both",
+            which="minor",
+            left="off",
+            right="off",
+            top="off",
+            bottom="off"
+    )
 
-        ax.set_xlim( [ min, max ] )
-        ax.set_ylim( [ min, max ] )
+    ax.grid(linestyle="-", which="minor")
 
-        ax.text( 0.4, 0.05,
-                 ", ".join( [ subj_id,
-                              "Slope: {s:.2f}".format( s = coef[ 0 ] ),
-                              "Intercept: {s:.2f}".format( s = coef[ 1 ] )
-                            ]
-                          ),
-                 transform = ax.transAxes,
-                 fontsize = 8 / 1.25
-               )
+    ax.set_xlabel("Source image")
+    ax.set_ylabel("Run trial")
 
-        if i_subj == len( subj_ids ) - 1:
-            ax.set_xlabel( "Coherent response (psc)" )
-            ax.set_ylabel( "Non-coherent response (psc)" )
+    patches = [
+            mpatches.Patch(
+                        facecolor=patch_colour,
+                        edgecolor="black",
+                        label=patch_label
+                    )
+            for (patch_colour, patch_label) in zip(
+                        ("white", "black"),
+                        ("Coherent", "Non-coherent")
+                    )
+    ]
 
-    plt.subplots_adjust( left = 0.08,
-                         bottom = 0.06,
-                         right = 0.95,
-                         top = 0.97,
-                         wspace = 0.2,
-                         hspace = 0.2
-                       )
+    legend = plt.legend(
+        handles=patches,
+        ncol=2,
+        loc=(0.2, -0.125),
+        frameon=False
+    )
 
-    plt.show()
-
+    plt.savefig("/home/dmannion/nsp.pdf")
