@@ -6,6 +6,7 @@ import matplotlib
 figutils.set_defaults()
 
 import matplotlib.pyplot as plt
+plt.ioff()
 import matplotlib.patches as mpatches
 import matplotlib.gridspec as gridspec
 import numpy as np
@@ -266,9 +267,9 @@ def id_stats():
 
 
 
-def plot_aperture_images(run_log_path, i_aperture==16, save_path=None):
+def plot_aperture_images(run_log_path, i_aperture=16, save_path=None):
 
-    conf = ns_patches.config.get_conf(subj_id=subj_id, subj_types="exp")
+    conf = ns_patches.config.get_conf()
 
     run_log = np.load(run_log_path)
 
@@ -350,7 +351,11 @@ def plot_aperture_images(run_log_path, i_aperture==16, save_path=None):
             bottom="off"
     )
 
-    ax.grid(linestyle="-", which="minor")
+    ax.grid(
+        linestyle="-",
+        linewidth=0.25,
+        which="minor"
+    )
 
     ax.set_xlabel("Source image")
     ax.set_ylabel("Run trial")
