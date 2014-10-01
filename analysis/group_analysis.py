@@ -13,7 +13,7 @@ def loc_stats( conf, paths ):
     subj_ids = all_conf.all_subj.subj.keys()
     subj_ids.sort()
 
-    patch_k = np.empty( ( len( subj_ids ), conf.exp.n_mod_patches ) )
+    patch_k = np.empty( ( len( subj_ids ), all_conf.exp.n_mod_patches ) )
     patch_k.fill( np.NAN )
 
     for ( i_subj, subj_id ) in enumerate( subj_ids ):
