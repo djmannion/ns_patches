@@ -1,4 +1,5 @@
 import os, os.path
+import socket
 
 import fmri_tools.paths
 
@@ -220,7 +221,12 @@ def get_group_paths():
 
     grp = fmri_tools.paths.PathsHandler()
 
-    grp.base = fmri_tools.paths.Path( "/labs/olmanlab/Data7T/NatScenePatches/group_data" )
+    if socket.gethostname() == "djm_unsw":
+        base_path = "/home/damien/venv_study/ns_patches_analysis/data"
+    else:
+        base_path = "/labs/olmanlab/Data7T/NatScenePatches/group_data"
+
+    grp.base = fmri_tools.paths.Path(base_path)
 
     file_base = "ns_patches"
 
