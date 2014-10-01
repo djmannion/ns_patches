@@ -266,7 +266,7 @@ def id_stats():
 
 
 
-def plot_aperture_images(run_log_path, i_aperture):
+def plot_aperture_images(run_log_path, i_aperture==16, save_path=None):
 
     conf = ns_patches.config.get_conf(subj_id=subj_id, subj_types="exp")
 
@@ -370,8 +370,10 @@ def plot_aperture_images(run_log_path, i_aperture):
     legend = plt.legend(
         handles=patches,
         ncol=2,
-        loc=(0.2, -0.125),
-        frameon=False
+        loc=(0.2, -0.125)
     )
 
-    plt.savefig("/home/dmannion/nsp.pdf")
+    legend.draw_frame(False)
+
+    if save_path:
+        plt.savefig(save_path)
