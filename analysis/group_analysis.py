@@ -30,7 +30,10 @@ def loc_stats( conf, paths ):
     np.savetxt( paths.patch_k.full( ".txt" ), patch_k, fmt = "%d" )
 
 
-def patch_summ(conf, paths):
+def coh_summ():
+
+    conf = ns_patches.config.get_conf()
+    group_paths = ns_patches.paths.get_group_paths()
 
     all_conf = ns_patches.config.get_conf(
         subj_id=None,
@@ -49,7 +52,7 @@ def patch_summ(conf, paths):
         conf.ana.exclude_patch_ids
     )
 
-    patch_data = np.empty((n_subj, len(patch_ids)))
+    patch_data = np.empty((n_subj, len(patch_ids), 2))
     patch_data.fill(np.NAN)
 
     for (i_subj, subj_id) in enumerate(subj_ids):
@@ -67,12 +70,14 @@ def patch_summ(conf, paths):
             # add 1 because they're stored as one-based
             i_patch_ok = subj_data[:, 3] == patch_id + 1
 
-            i_ok = np.logical_and(i_act, i_patch_ok)
+            assert np.sum(np.isnan(subj_data[i_patch_ok, -2:])) == 0
 
-            assert np.sum(np.isnan(subj_data[i_ok, -2:])) == 0
+            patch_data[i_subj, i_patch, :] = np.mean(
+                subj_data[i_patch_ok, -2:],
+                axis=0
+            )
 
-            diff_mean = np.mean(subj_data[i_ok, -2] - subj_data[i_ok, -1])
-
-            patch_data[i_subj, i_patch] = diff_mean
-
-    return patch_data
+    np.save(
+        group_paths.coh_summ.full(".npy"),
+        patch_data
+    )
