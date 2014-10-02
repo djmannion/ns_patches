@@ -42,7 +42,7 @@ def main():
         ns_patches.analysis.group_analysis.loc_stats( conf, paths )
 
     elif args.proc_step == "coh_summ":
-        ns_patches.analysis.group_analysis.coh_summ( conf, paths )
+        ns_patches.analysis.group_analysis.coh_summ()
 
     else:
         print "Not implemented"
