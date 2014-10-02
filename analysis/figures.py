@@ -119,152 +119,135 @@ def ecc_diff_fig(conf, paths):
     plt.show()
 
 
-def coh_diff_fig(conf, paths):
+def plot_cond_resp(save_path=None):
 
-    all_conf = ns_patches.config.get_conf(
-            subj_id=None,
-            subj_types="exp",
-            excl_subj_ids=conf.ana.exclude_subj_ids
+    conf = ns_patches.config.get_conf()
+    group_paths = ns_patches.paths.get_group_paths()
+
+    # this is (subj x aperture x condition [coh, non-coh])
+    data = np.load(group_paths.coh_summ.full(".npy"))
+
+    # average over apertures
+    data = np.mean(data, axis=1)
+
+    # do the stats now so can check normalisation
+    (t, p) = scipy.stats.ttest_rel(data[:, 0], data[:, 1])
+
+    # now normalise
+    subj_mean = np.mean(data, axis=1)
+    grand_mean = np.mean(data)
+
+    data = (data - subj_mean[:, np.newaxis]) + grand_mean
+
+    # this shouldn't affect the stats - check this is indeed true
+    (norm_t, norm_p) = scipy.stats.ttest_rel(data[:, 0], data[:, 1])
+
+    # floating point, so try and test safely
+    np.testing.assert_almost_equal(t, norm_t)
+    np.testing.assert_almost_equal(p, norm_p)
+
+    # average over subjects
+    cond_mean = np.mean(data, axis=0)
+    # SEM, using sample stdev
+    cond_sem = np.std(data, axis=0, ddof=1) / np.sqrt(data.shape[0])
+
+    print "Condition means are: ", cond_mean
+    print "Condition SEMs are: ", cond_sem
+    print (
+        "Difference stats are t(" +
+        str(data.shape[0] - 1) +
+        ") = " +
+        str(t) +
+        ", p = " +
+        str(p)
     )
 
-    paths = ns_patches.paths.get_group_paths()
+    # now can get on with the business of plotting!
 
-    coh_summ = ns_patches.analysis.group_analysis.patch_summ(all_conf, paths)
+    fig = plt.figure(figsize=[3.3, 2.5], frameon=False)
 
-    coh_diff = np.mean(coh_summ, axis=1)
+    x_off = 0.15
+    y_off = 0.175
+    x_max = 0.97
+    y_max = 0.97
+    y_lower_max = y_off + 0.15
 
-    std_err = np.std(coh_diff, ddof=1) / np.sqrt(len(coh_diff))
-
-    ci = [np.mean(coh_diff), np.mean(coh_diff) - std_err, np.mean(coh_diff) + std_err]
-
-    figutils.set_defaults()
-
-    font_params = {
-        "axes.labelsize": 24 * (1 / 1.25),
-        "xtick.labelsize": 22 * (1 / 1.25),
-        "ytick.labelsize": 22 * (1 / 1.25),
-    }
-
-    plt.rcParams.update(font_params)
-    plt.ioff()
-
-    fig = plt.figure()
-
-    fig.set_size_inches(13, 9.3, forward = True)
-
-    ax = plt.subplot(111)
-
-    ms = 16
-
-    ax.plot(
-        range(3, coh_summ.shape[0] + 3),
-        coh_diff,
-        markerfacecolor="k",
-        markeredgecolor="w",
-        marker="o",
-        linestyle="None",
-        markersize=ms * 0.75
+    ax_base = plt.Axes(
+        fig=fig,
+        rect=[x_off, y_off, x_max - x_off, y_lower_max - y_off],
     )
 
-    ax.hold(True)
-
-    ax.plot(
-        [0.5]*2,
-        ci[1:],
-        color="k",
-        markersize=ms
+    ax_plt = plt.Axes(
+        fig=fig,
+        rect=[x_off, y_lower_max, x_max - x_off, y_max - y_lower_max],
+        sharex=ax_base,
     )
 
-    ax.plot(
-        [0.5],
-        ci[0],
-        markerfacecolor="k",
-        marker="s",
-        markeredgecolor="w",
-        markersize=ms,
-        markeredgewidth=3
+    fig.add_axes(ax_base)
+    fig.add_axes(ax_plt)
+
+    ax_plt.set_ylim([1.45, 1.65])
+    ax_base.set_ylim([0,0.1])
+
+    ax_base.set_xlim([-0.5, 1.5])
+
+    ax_plt.plot(
+        [0] * 2,
+        [cond_mean[0] - cond_sem[0], cond_mean[0] + cond_sem[0]],
+        "k"
     )
 
-    ax.plot(
-        [-1,11.5],
-        [0, 0],
-        color="k",
-        linestyle="--"
+    ax_plt.plot(
+        [1] * 2,
+        [cond_mean[1] - cond_sem[1], cond_mean[1] + cond_sem[1]],
+        "k"
     )
 
-    figutils.cleanup_fig(ax)
-
-    ax.set_xlim(-1, 11.5)
-
-    ax.set_xticks([0.5]+range(3,coh_summ.shape[0] + 3))
-
-    ax.set_xticklabels(
-        ["Mean"] +
-        ["P{n:d}".format(n = n) for n in range(1, coh_summ.shape[0] + 1)]
+    ax_plt.scatter(
+        [0, 1],
+        cond_mean,
+        facecolor=[0] * 3,
+        edgecolor=[1] * 3,
+        s=60,
+        zorder=100
     )
 
-    ax.set_xlabel("Participant")
-    ax.set_ylabel("Consistent - inconsistent (psc)")
+    ax_plt.spines["bottom"].set_visible(False)
+    ax_base.spines["top"].set_visible(False)
 
-    plt.show()
+    ax_plt.tick_params(labeltop="off", labelbottom="off")
+    ax_plt.tick_params(axis="x", bottom="off", top="off", right="off")
+    ax_plt.tick_params(axis="y", right="off")
+    ax_base.tick_params(axis="y", right="off")
 
+    ax_base.spines["right"].set_visible(False)
+    ax_plt.spines["right"].set_visible(False)
+    ax_plt.spines["top"].set_visible(False)
 
+    ax_base.xaxis.tick_bottom()
 
+    ax_base.set_xlabel("Condition")
+    ax_base.set_xticks([0, 1])
+    ax_base.set_xticklabels(["Coherent", "Non-coherent"])
 
-def id_stats():
+    ax_plt.set_ylabel("Response (normalised psc)", y=0.4)
 
-    all_conf = ns_patches.config.get_conf( subj_id = None, subj_types = "loc" )
+    ax_base.spines["bottom"].set_position(("outward", 5))
+    ax_base.spines["left"].set_position(("outward", 5))
+    ax_plt.spines["left"].set_position(("outward", 5))
 
-    subj_ids = all_conf.all_subj.subj.keys()
-    subj_ids.sort()
+    ax_base.set_yticks([0])
+    ax_base.tick_params(axis="y", length=0)
 
-    figutils.set_defaults()
+    kwargs = dict(transform=ax_base.transAxes, color='k', clip_on=False)
 
-    fig = plt.figure()
+    ax_base.plot([-0.04, -0.01], [0.35, 0.45], "k", **kwargs)
+    ax_base.plot([-0.04, -0.01], [0.45, 0.55], "k", **kwargs)
 
-    fig.set_size_inches( 7.08661, 10, forward = False )
+    if save_path:
+        plt.savefig(save_path)
 
-    id_k = np.empty( ( len( subj_ids ), all_conf.exp.n_mod_patches ) )
-    id_k.fill( np.NAN )
-
-    for ( i_subj, subj_id ) in enumerate( subj_ids ):
-
-        subj_conf = ns_patches.config.get_conf( subj_id )
-
-        if not subj_conf.subj.is_loc:
-            continue
-
-        subj_paths = ns_patches.paths.get_subj_paths( subj_conf )
-
-        k = np.loadtxt( subj_paths.loc.patch_id_count.full( ".txt" ) )
-
-        id_k[ i_subj, : ] = k
-
-        if np.any( k == 0 ):
-            print "Subject " + subj_id + " has 0 node counts"
-
-    print id_k
-
-    assert np.sum( np.isnan( id_k ) ) == 0
-
-    gs = gridspec.GridSpec( 1, 2 )
-
-    for i_axis in xrange( 2 ):
-
-        ax = plt.subplot( gs[ i_axis ] )
-
-        mean_data = np.mean( id_k, axis = i_axis )
-        err_data = np.std( id_k, axis = i_axis, ddof = 1 ) / np.sqrt( id_k.shape[ i_axis ] )
-
-        ax.plot( range( 1, len( mean_data ) + 1 ), mean_data )
-
-        figutils.cleanup_fig( ax )
-
-
-#    plt.show()
-
-    return id_k
-
+    plt.close(fig)
 
 
 def plot_aperture_images(run_log_path, i_aperture=16, save_path=None):
@@ -382,3 +365,5 @@ def plot_aperture_images(run_log_path, i_aperture=16, save_path=None):
 
     if save_path:
         plt.savefig(save_path)
+
+    plt.close(fig)
