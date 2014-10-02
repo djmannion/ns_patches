@@ -19,104 +19,183 @@ import ns_patches.config, ns_patches.paths, ns_patches.analysis.group_analysis
 import ns_patches.analysis.analysis
 
 
-def ecc_diff_fig(conf, paths):
+def plot_dist(save_path=None):
+
+    bin_start = 0.0
+    bin_spacing = 1.0
+    n_bins = 10
+
+    conf = ns_patches.config.get_conf()
+    group_paths = ns_patches.paths.get_group_paths()
 
     all_conf = ns_patches.config.get_conf(
-            subj_id=None,
-            subj_types="exp",
-            excl_subj_ids=conf.ana.exclude_subj_ids
+        subj_id=None,
+        subj_types="exp",
+        excl_subj_ids=conf.ana.exclude_subj_ids
     )
 
-    paths = ns_patches.paths.get_group_paths()
+    subj_ids = all_conf.all_subj.subj.keys()
+    subj_ids.sort()
 
-    coh_summ = ns_patches.analysis.group_analysis.patch_summ(all_conf, paths)
+    n_subj = len(subj_ids)
 
-    patch_ids = np.setdiff1d(
-        conf.exp.mod_patches,
-        conf.ana.exclude_patch_ids
+    data = np.empty((n_subj, 2, n_bins + 1))
+    data.fill(np.NAN)
+
+    for (i_subj, subj_id) in enumerate(subj_ids):
+
+        subj_data = np.loadtxt(
+            os.path.join(
+                group_paths.base.full(),
+                subj_id + "_ns_patches-comb.txt"
+            )
+        )
+
+        dist = subj_data[:, 4]
+
+        for i_bin in xrange(n_bins):
+
+            left_edge = i_bin * bin_spacing + bin_start
+            right_edge = left_edge + bin_spacing
+
+            in_bin = np.logical_and(
+                dist >= left_edge,
+                dist < right_edge
+            )
+
+            data[i_subj, :, i_bin] = np.mean(
+                subj_data[in_bin, -2:],
+                axis=0
+            )
+
+        in_bin = dist >= n_bins * bin_spacing
+
+        data[i_subj, :, -1] = np.mean(
+            subj_data[in_bin, -2:],
+            axis=0
+        )
+
+    subj_mean = np.mean(np.mean(data, axis=-1), axis=-1)
+    grand_mean = np.mean(data)
+
+    data = (data - subj_mean[:, np.newaxis, np.newaxis]) + grand_mean
+
+    data_mean = np.mean(data, axis=0)
+    data_sem = np.std(data, axis=0, ddof=1) / np.sqrt(data.shape[0])
+
+    fig = plt.figure(figsize=[3.3, 2.5], frameon=False)
+
+    x_off = 0.15
+    y_off = 0.175
+    x_max = 0.97
+    y_max = 0.97
+    y_lower_max = y_off + 0.15
+
+    ax_base = plt.Axes(
+        fig=fig,
+        rect=[x_off, y_off, x_max - x_off, y_lower_max - y_off],
     )
 
-    ring_ids = conf.stim.patches[patch_ids]["ring"]
+    ax_plt = plt.Axes(
+        fig=fig,
+        rect=[x_off, y_lower_max, x_max - x_off, y_max - y_lower_max],
+        sharex=ax_base,
+    )
 
-    ring_diff = np.zeros(3)
-    ring_err = np.zeros(3)
+    fig.add_axes(ax_base)
+    fig.add_axes(ax_plt)
 
-    for i_ring in xrange(3):
+    ax_plt.set_ylim([0.7, 2.1])
+    ax_base.set_ylim([0,0.1])
 
-        ring_patches = ring_ids == i_ring
+    ax_base.set_xlim([-0.5, 11.5])
 
-        ring_data = coh_summ[:, ring_patches]
+    symbols = ["s", "D"]
+    labels = ["Coherent", "Non-coherent"]
 
-        ring_diff[i_ring] = np.mean(ring_data)
+    for (i_cond, flag) in enumerate([-1, +1]):
 
-        ring_mean = np.mean(ring_data, axis=1)
-
-        ring_err[i_ring] = np.std(ring_mean, ddof=1) / np.sqrt(len(ring_mean))
-
-
-    figutils.set_defaults()
-
-    font_params = {
-        "axes.labelsize": 24 * (1 / 1.25),
-        "xtick.labelsize": 22 * (1 / 1.25),
-        "ytick.labelsize": 22 * (1 / 1.25),
-    }
-
-    plt.rcParams.update(font_params)
-    plt.ioff()
-
-    fig = plt.figure()
-
-    fig.set_size_inches(13, 9.3, forward = True)
-
-    ax = plt.subplot(111)
-
-    ring_ecc_degs = [1.8, 3.5, 6.1]
-
-    for (i_ring, ring_ecc_deg) in enumerate(ring_ecc_degs):
-
-        ax.plot(
-            [ring_ecc_deg] * 2,
-            [
-                ring_diff[i_ring] - ring_err[i_ring],
-                ring_diff[i_ring] + ring_err[i_ring]
-            ],
-            color="k",
-            markersize=16
+        ax_plt.plot(
+            np.arange(11) + flag * 0.1,
+            np.mean(data[:, i_cond, :], axis=0),
+            "k"
         )
 
-        ax.plot([0,7], [0, 0], "k--")
-
-        ax.hold(True)
-
-        ax.plot(
-            ring_ecc_deg,
-            ring_diff[i_ring],
-            markerfacecolor="k",
-            marker="s",
-            markeredgecolor="w",
-            markersize=16,
-            markeredgewidth=3
+        ax_plt.scatter(
+            np.arange(11) + flag * 0.1,
+            np.mean(data[:, i_cond, :], axis=0),
+            facecolor=[0] * 3,
+            edgecolor=[1] * 3,
+            s=60,
+            zorder=100,
+            marker=symbols[i_cond],
+            label=labels[i_cond]
         )
 
-    figutils.cleanup_fig(ax)
+        for i_bin in xrange(11):
 
-    ax.set_xlim(0, 7)
-    ax.set_ylim(-0.02, 0.16)
+            ax_plt.plot(
+                [i_bin + flag * 0.1] * 2,
+                [
+                    data_mean[i_cond, i_bin] - data_sem[i_cond, i_bin],
+                    data_mean[i_cond, i_bin] + data_sem[i_cond, i_bin]
+                ],
+                "k"
+            )
 
-#    ax.set_xlim(-1, 11.5)
+    ax_plt.spines["bottom"].set_visible(False)
+    ax_base.spines["top"].set_visible(False)
 
-#    ax.set_xticks([0.5]+range(3,coh_summ.shape[0] + 3))
+    ax_plt.tick_params(labeltop="off", labelbottom="off")
+    ax_plt.tick_params(axis="x", bottom="off", top="off", right="off")
+    ax_plt.tick_params(axis="y", right="off")
+    ax_base.tick_params(axis="y", right="off")
 
-#    ax.set_xticklabels(
-#        ["Mean"] +
-#        ["P{n:d}".format(n = n) for n in range(1, coh_summ.shape[0] + 1)]
-#    )
+    ax_base.spines["right"].set_visible(False)
+    ax_plt.spines["right"].set_visible(False)
+    ax_plt.spines["top"].set_visible(False)
 
-    ax.set_xlabel("Patch eccenticity (deg visual angle)")
-    ax.set_ylabel("Consistent - inconsistent (psc)")
+    ax_base.xaxis.tick_bottom()
 
-    plt.show()
+    ax_base.set_xlabel("Distance from aperture centre (mm)")
+    ax_base.set_xticks(range(11))
+    ax_base.set_xticklabels(["Inner", "Middle", "Outer"])
+
+    xtick_labels = [
+        "{n1:.0f}-{n2:.0f}".format(n1=n1, n2=n1 + bin_spacing)
+        for n1 in np.arange(11)
+    ]
+    xtick_labels[-1] = "> 10"
+
+    ax_base.set_xticklabels(xtick_labels)
+
+    ax_plt.set_ylabel("Response (normalised psc)", y=0.4)
+
+    ax_base.spines["bottom"].set_position(("outward", 5))
+    ax_base.spines["left"].set_position(("outward", 5))
+    ax_plt.spines["left"].set_position(("outward", 5))
+
+    ax_base.set_yticks([0])
+    ax_base.tick_params(axis="y", length=0)
+
+    kwargs = dict(transform=ax_base.transAxes, color='k', clip_on=False)
+
+    ax_base.plot([-0.04, -0.01], [0.35, 0.45], "k", **kwargs)
+    ax_base.plot([-0.04, -0.01], [0.45, 0.55], "k", **kwargs)
+
+    leg = plt.legend(
+        scatterpoints=1,
+        loc="upper right"
+    )
+
+    leg.draw_frame(False)
+
+    if save_path:
+        plt.savefig(save_path)
+
+    plt.close(fig)
+
+    return leg
 
 
 def plot_cond_resp(save_path=None):
