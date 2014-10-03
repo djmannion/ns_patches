@@ -19,6 +19,147 @@ import ns_patches.config, ns_patches.paths, ns_patches.analysis.group_analysis
 import ns_patches.analysis.analysis
 
 
+def plot_dist_diff(save_path=None):
+
+    bin_start = 0.0
+    bin_spacing = 1.0
+    n_bins = 10
+
+    conf = ns_patches.config.get_conf()
+    group_paths = ns_patches.paths.get_group_paths()
+
+    all_conf = ns_patches.config.get_conf(
+        subj_id=None,
+        subj_types="exp",
+        excl_subj_ids=conf.ana.exclude_subj_ids
+    )
+
+    subj_ids = all_conf.all_subj.subj.keys()
+    subj_ids.sort()
+
+    n_subj = len(subj_ids)
+
+    data = np.empty((n_subj, 2, n_bins + 1))
+    data.fill(np.NAN)
+
+    for (i_subj, subj_id) in enumerate(subj_ids):
+
+        subj_data = np.loadtxt(
+            os.path.join(
+                group_paths.base.full(),
+                subj_id + "_ns_patches-comb.txt"
+            )
+        )
+
+        dist = subj_data[:, 4]
+
+        for i_bin in xrange(n_bins):
+
+            left_edge = i_bin * bin_spacing + bin_start
+            right_edge = left_edge + bin_spacing
+
+            in_bin = np.logical_and(
+                dist >= left_edge,
+                dist < right_edge
+            )
+
+            data[i_subj, :, i_bin] = np.mean(
+                subj_data[in_bin, -2:],
+                axis=0
+            )
+
+        in_bin = dist >= n_bins * bin_spacing
+
+        data[i_subj, :, -1] = np.mean(
+            subj_data[in_bin, -2:],
+            axis=0
+        )
+
+    diff_data = data[:, 0, :] - data[:, 1, :]
+    diff_mean = np.mean(diff_data, axis=0)
+    diff_sem = np.std(diff_data, axis=0, ddof=1) / np.sqrt(diff_data.shape[0])
+
+    fig = plt.figure(figsize=[3.3, 2.5], frameon=False)
+
+    x_off = 0.16
+    y_off = 0.175
+    x_max = 0.97
+    y_max = 0.97
+
+    ax_plt = plt.Axes(
+        fig=fig,
+        rect=[x_off, y_off, x_max - x_off, y_max - y_off]
+    )
+
+    fig.add_axes(ax_plt)
+
+    ax_plt.set_ylim([-0.05, 0.2])
+    ax_plt.set_xlim([-0.5, 11.5])
+
+    ax_plt.plot(
+        [-0.5, 11.5],
+        [0, 0],
+        "--",
+        color=[0.5] * 3
+    )
+
+    ax_plt.plot(
+        np.arange(11),
+        diff_mean,
+        "k"
+    )
+
+    ax_plt.scatter(
+        np.arange(11),
+        diff_mean,
+        facecolor=[0] * 3,
+        edgecolor=[1] * 3,
+        s=60,
+        zorder=100
+    )
+
+    for i_bin in xrange(11):
+
+        ax_plt.plot(
+            [i_bin] * 2,
+            [
+                diff_mean[i_bin] - diff_sem[i_bin],
+                diff_mean[i_bin] + diff_sem[i_bin]
+            ],
+            "k"
+        )
+
+    ax_plt.spines["bottom"].set_visible(True)
+
+#    ax_plt.tick_params(labeltop="off", labelbottom="off")
+    ax_plt.tick_params(axis="x", top="off", right="off")
+    ax_plt.tick_params(axis="y", right="off")
+
+    ax_plt.spines["right"].set_visible(False)
+    ax_plt.spines["top"].set_visible(False)
+
+    ax_plt.set_xlabel("Distance from aperture centre (mm)")
+    ax_plt.set_xticks(range(11))
+
+    xtick_labels = [
+        "{n1:.0f}-{n2:.0f}".format(n1=n1, n2=n1 + bin_spacing)
+        for n1 in np.arange(11)
+    ]
+    xtick_labels[-1] = "> 10"
+
+    ax_plt.set_xticklabels(xtick_labels)
+
+    ax_plt.set_ylabel("Coherent - non-coherent response (psc)")#, y=0.4)
+
+    ax_plt.spines["bottom"].set_position(("outward", 5))
+    ax_plt.spines["left"].set_position(("outward", 5))
+
+    if save_path:
+        plt.savefig(save_path)
+
+    plt.close(fig)
+
+
 def plot_dist(save_path=None):
 
     bin_start = 0.0
