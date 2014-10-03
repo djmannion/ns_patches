@@ -198,6 +198,170 @@ def plot_dist(save_path=None):
     return leg
 
 
+def plot_cond_resp_by_ecc(save_path=None):
+
+    conf = ns_patches.config.get_conf()
+    group_paths = ns_patches.paths.get_group_paths()
+
+    # this is (subj x aperture x condition [coh, non-coh])
+    data = np.load(group_paths.coh_summ.full(".npy"))
+
+    # cull the patches with not enough nodes for all subjects
+    patch_ids = np.setdiff1d(
+        conf.exp.mod_patches,
+        conf.ana.exclude_patch_ids
+    )
+
+    assert len(patch_ids) == data.shape[1]
+
+    rings = [[], [], []]
+
+    for (i_patch, patch_id) in enumerate(patch_ids):
+
+        i_stim_patch = np.where(
+            conf.stim.patches["id"] == patch_id
+        )[0][0]
+
+        i_ring = conf.stim.patches[i_stim_patch]["ring"]
+
+        rings[i_ring].append(i_patch)
+
+    # subj x coh x ring
+    ecc_data = np.empty((data.shape[0], 2, 3))
+    ecc_data.fill(np.NAN)
+
+    for i_ring in xrange(3):
+        ecc_data[..., i_ring] = np.mean(data[:, rings[i_ring], :], axis=1)
+
+    subj_mean = np.mean(np.mean(ecc_data, axis=-1), axis=-1)
+    grand_mean = np.mean(ecc_data)
+
+    norm_data = (ecc_data - subj_mean[:, np.newaxis, np.newaxis]) + grand_mean
+
+    mean_data = np.mean(norm_data, axis=0)
+    sem_data = np.std(norm_data, axis=0, ddof=1) / np.sqrt(data.shape[0])
+
+    # do the stats
+    for i_ring in xrange(3):
+
+        print "Ring: " + str(i_ring + 1)
+        print "\tMean: ", mean_data[:, i_ring]
+        print "\tSEM: ", sem_data[:, i_ring]
+
+        (t, p) = scipy.stats.ttest_rel(
+            norm_data[:, 0, i_ring],
+            norm_data[:, 1, i_ring]
+        )
+
+        print "\tt: ", t
+        print "\tp: ", p
+
+    # now can get on with the business of plotting!
+
+    fig = plt.figure(figsize=[3.3, 2.5], frameon=False)
+
+    x_off = 0.15
+    y_off = 0.175
+    x_max = 0.97
+    y_max = 0.97
+    y_lower_max = y_off + 0.15
+
+    ax_base = plt.Axes(
+        fig=fig,
+        rect=[x_off, y_off, x_max - x_off, y_lower_max - y_off],
+    )
+
+    ax_plt = plt.Axes(
+        fig=fig,
+        rect=[x_off, y_lower_max, x_max - x_off, y_max - y_lower_max],
+        sharex=ax_base,
+    )
+
+    fig.add_axes(ax_base)
+    fig.add_axes(ax_plt)
+
+    ax_plt.set_ylim([1.0, 2.05])
+    ax_base.set_ylim([0,0.1])
+
+    ax_base.set_xlim([-0.5, 2.5])
+
+    symbols = ["s", "D"]
+    labels = ["Coherent", "Non-coherent"]
+
+    for (i_cond, flag) in enumerate([-1, +1]):
+
+        ax_plt.scatter(
+            np.arange(3) + flag * 0.1,
+            mean_data[i_cond, :],
+            facecolor=[0] * 3,
+            edgecolor=[1] * 3,
+            s=60,
+            zorder=100,
+            marker=symbols[i_cond],
+            label=labels[i_cond]
+        )
+
+        for i_x in xrange(3):
+
+            ax_plt.plot(
+                [i_x + flag * 0.1] * 2,
+                [
+                    mean_data[i_cond, i_x] - sem_data[i_cond, i_x],
+                    mean_data[i_cond, i_x] + sem_data[i_cond, i_x]
+                ],
+                "k"
+            )
+
+    for i_x in [1, 2]:
+        ax_plt.plot([i_x - 0.1, i_x + 0.1], [1.975] * 2, "k")
+        ax_plt.text(i_x, 1.98, "*", horizontalalignment="center")
+
+
+    ax_plt.spines["bottom"].set_visible(False)
+    ax_base.spines["top"].set_visible(False)
+
+    ax_plt.tick_params(labeltop="off", labelbottom="off")
+    ax_plt.tick_params(axis="x", bottom="off", top="off", right="off")
+    ax_plt.tick_params(axis="y", right="off")
+    ax_base.tick_params(axis="y", right="off")
+
+    ax_base.spines["right"].set_visible(False)
+    ax_plt.spines["right"].set_visible(False)
+    ax_plt.spines["top"].set_visible(False)
+
+    ax_base.xaxis.tick_bottom()
+
+    ax_base.set_xlabel("Aperture eccentricity")
+    ax_base.set_xticks(range(3))
+    ax_base.set_xticklabels(["Inner", "Middle", "Outer"])
+
+    ax_plt.set_ylabel("Response (normalised psc)", y=0.4)
+
+    ax_base.spines["bottom"].set_position(("outward", 5))
+    ax_base.spines["left"].set_position(("outward", 5))
+    ax_plt.spines["left"].set_position(("outward", 5))
+
+    ax_base.set_yticks([0])
+    ax_base.tick_params(axis="y", length=0)
+
+    kwargs = dict(transform=ax_base.transAxes, color='k', clip_on=False)
+
+    ax_base.plot([-0.04, -0.01], [0.35, 0.45], "k", **kwargs)
+    ax_base.plot([-0.04, -0.01], [0.45, 0.55], "k", **kwargs)
+
+    leg = plt.legend(
+        scatterpoints=1,
+        loc="upper left"
+    )
+
+    leg.draw_frame(False)
+
+    if save_path:
+        plt.savefig(save_path)
+
+    plt.close(fig)
+
+
 def plot_cond_resp(save_path=None):
 
     conf = ns_patches.config.get_conf()
