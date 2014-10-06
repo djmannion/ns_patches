@@ -145,7 +145,7 @@ def plot_dist_diff(save_path=None):
         "{n1:.0f}-{n2:.0f}".format(n1=n1, n2=n1 + bin_spacing)
         for n1 in np.arange(11)
     ]
-    xtick_labels[-1] = "> 10"
+    xtick_labels[-1] = "10+"
 
     ax_plt.set_xticklabels(xtick_labels)
 
