@@ -244,3 +244,69 @@ def vol_to_surf( conf, paths ):
 
     os.chdir( start_dir )
 
+
+def vol_to_surf_depth( conf, paths ):
+    """Converts the functional volume-based images to SUMA surfaces."""
+
+    logger = logging.getLogger( __name__ )
+    logger.info( "Running volume to surface projection at different depths..." )
+
+    start_dir = os.getcwd()
+
+    for ( uw_file, surf_file, run_dir ) in zip( paths.func.uws,
+                                                paths.func.surfs,
+                                                paths.func.runs
+                                              ):
+
+        os.chdir( run_dir.full() )
+
+        for hemi in [ "lh", "rh" ]:
+
+            spec_file = paths.reg.spec.full( "_{hemi:s}.spec".format( hemi = hemi ) )
+
+            # replace the subject ID with what FreeSurfer/SUMA considers the subject
+            # ID to be
+            spec_file = spec_file.replace( conf.subj.subj_id, conf.subj.fs_subj_id )
+
+            for (i_bin, bin_centre) in enumerate(conf.ana.bin_centres):
+
+                white_frac = bin_centre - (conf.ana.bin_width / 2.0)
+                grey_frac = bin_centre + (conf.ana.bin_width / 2.0) - 1.0
+
+                surf_path = surf_file.full(
+                    "_bin_{i:d}_{h:s}.niml.dset".format( h = hemi, i = i_bin )
+                )
+
+                surf_cmd = [
+                    "3dVol2Surf",
+                    "-spec", spec_file,
+                    "-surf_A", "smoothwm",
+                    "-surf_B", "pial",
+                    "-map_func", "ave",
+                    "-f_steps", "15",
+                    "-f_index", "nodes",
+                    "-f_p1_fr", str(white_frac),
+                    "-f_pn_fr", str(grey_frac),
+                    "-sv", paths.reg.anat_reg.full( "+orig" ),
+                    "-grid_parent", uw_file.full( ".nii" ),
+                    "-out_niml", surf_path,
+                    "-overwrite"
+                ]
+
+                runcmd.run_cmd( " ".join( surf_cmd ) )
+
+                # convert to full
+                full_path = surf_file.full(
+                    "_bin_{i:d}_{h:s}-full.niml.dset".format(
+                        h = hemi, i = i_bin
+                    )
+                )
+
+                node_str = "{n:d}".format( n = conf.subj.node_k[ hemi ] )
+                fmri_tools.utils.sparse_to_full( in_dset = surf_path,
+                                                 out_dset = full_path,
+                                                 pad_node = node_str
+                                               )
+
+    os.chdir( start_dir )
+

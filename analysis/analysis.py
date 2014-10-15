@@ -307,6 +307,187 @@ def _run_coh_glm(conf, paths, patch_id):
     )
 
 
+def coh_glm_depth(conf, paths):
+    "Run the GLM(s) for a given subject"
+
+    os.chdir(paths.depth_ana.base.full())
+
+    # we only want to run GLMs for the patches with acceptable node counts, so
+    # remove those identified as lacking
+    patch_ids = np.setdiff1d(
+        conf.exp.mod_patches,
+        conf.ana.exclude_patch_ids
+    )
+
+    # run the GLM for each patch
+    for patch_id in patch_ids:
+        for i_bin in xrange(len(conf.ana.bin_centres)):
+            _run_coh_glm_depth(conf, paths, patch_id, i_bin)
+
+    vf_lookup = {"lh": "R", "rh": "L"}
+
+    # combine all into one
+    for hemi in ["lh", "rh"]:
+
+        for i_bin in xrange(len(conf.ana.bin_centres)):
+
+            comb_cmd = [
+                "3dMean",
+                "-non_zero",
+                "-sum",
+                "-prefix", paths.depth_ana.comb.full(
+                    "_bin_" + str(i_bin) + "_" + hemi + "-full.niml.dset"
+                ),
+                "-overwrite"
+            ]
+
+            for patch_id in patch_ids:
+
+                if conf.stim.patches[patch_id]["vf"] == vf_lookup[hemi]:
+
+                    comb_cmd.append(
+                        paths.depth_ana.psc.file(
+                            "-patch_{n:d}".format(n=patch_id) +
+                            "_bin_" + str(i_bin) +
+                            "_" + hemi +
+                            "-full.niml.dset"
+                        )
+                    )
+
+            runcmd.run_cmd(" ".join(comb_cmd))
+
+
+def _run_coh_glm_depth(conf, paths, patch_id, i_bin):
+    "Run the coh/incoh GLM for a given patch and depth"
+
+    os.chdir(paths.depth_ana.base.full())
+
+    # contralateral organisation
+    if conf.stim.patches[patch_id]["vf"] == "L":
+        hemi = "rh"
+    else:
+        hemi = "lh"
+
+    hemi_ext = "_" + hemi
+    bin_ext = "_bin_" + str(i_bin)
+
+    mask_path = paths.coh_ana.mask.full(
+        "-patch_{n:d}".format(n=patch_id) +
+        hemi_ext +
+        "-full.niml.dset"
+    )
+
+    # right-o, ready for the GLM
+    censor_vols = conf.exp.n_censor_vols - 1
+    censor_str = "*:0-{v:.0f}".format(v=censor_vols)
+
+    model_str = "SPMG1({d:.0f})".format(d=conf.exp.img_on_s)
+
+    glm_cmd = [
+        "3dDeconvolve",
+        "-input"
+    ]
+
+    surf_paths = [
+        surf_path.full(bin_ext + hemi_ext + "-full.niml.dset")
+        for surf_path in paths.func.surfs
+    ]
+
+    glm_cmd.extend(surf_paths)
+
+    glm_cmd.extend(
+        [
+            "-force_TR", "{tr:.3f}".format(tr=conf.acq.tr_s),
+            "-polort", "a",  # auto baseline degree
+            "-local_times",
+            "-mask", mask_path,
+            "-CENSORTR", censor_str,
+            "-xjpeg", "exp_design_bin_{n:d}_patch_{x:d}.png".format(n=i_bin, x=patch_id),
+            "-x1D", "exp_design_bin_{n:d}_patch_{x:d}".format(n=i_bin, x=patch_id),
+#            "-overwrite",
+            "-x1D_stop",  # want to use REML, so don't bother running
+            "-num_stimts", "2"
+        ]
+    )
+
+    for (i_cond, cond_name) in enumerate(["coh", "incoh"]):
+
+        glm_cmd.extend(
+            [
+                "-stim_label",
+                "{x:d}".format(x=i_cond + 1), cond_name
+            ]
+        )
+
+        glm_cmd.extend(
+            [
+                "-stim_times",
+                "{x:d}".format(x=i_cond + 1),
+                paths.coh_ana.stim_times.full(
+                    "-patch_{n:d}_{c:s}.txt".format(n=patch_id, c=cond_name)
+                ),
+                model_str
+            ]
+        )
+
+    runcmd.run_cmd(" ".join(glm_cmd))
+
+    os.remove("Decon.REML_cmd")
+
+    beta_file = paths.depth_ana.beta.full(
+        "-patch_{n:d}".format(n=patch_id) +
+        bin_ext +
+        hemi_ext +
+        "-full.niml.dset"
+    )
+    buck_file = paths.depth_ana.glm.full(
+        "-patch_{n:d}".format(n=patch_id) +
+        bin_ext +
+        hemi_ext +
+        "-full.niml.dset"
+    )
+
+    reml_cmd = [
+        "3dREMLfit",
+        "-matrix", "exp_design_bin_{n:d}_patch_{x:d}.xmat.1D".format(n=i_bin, x=patch_id),
+        "-mask", mask_path,
+        "-Rbeta", beta_file,
+        "-tout",
+        "-Rbuck", buck_file,
+#        "-overwrite",
+        "-input"
+    ]
+
+    reml_cmd.append("'" + " ".join(surf_paths) + "'")
+
+    # run the proper GLM
+    runcmd.run_cmd(" ".join(reml_cmd))
+
+    # now to convert to PSC, while we're here
+    design_path = "exp_design_bin_{n:d}_patch_{x:d}.xmat.1D".format(n=i_bin, x=patch_id)
+
+    # to write
+    ext = "-patch_{n:d}".format(n=patch_id) + bin_ext +hemi_ext + "-full.niml.dset"
+    bltc_path = paths.depth_ana.bltc.file(ext)
+    bl_path = paths.depth_ana.bl.file(ext)
+    psc_path = paths.depth_ana.psc.file(ext)
+
+    # 4 orthogonal polynomial regressors per run
+    n_nuisance = conf.subj.n_runs * 4
+
+    # checked via '-verb'
+    beta_bricks = "[{n:d}..$]".format(n=n_nuisance)
+
+    fmri_tools.utils.beta_to_psc(
+        beta_file,
+        beta_bricks,
+        design_path,
+        bltc_path,
+        bl_path,
+        psc_path,
+    )
+
+
 def _patch_cent_dist(conf, paths, patch_id):
     "Write the distance of each node in a patch to its centre"
 
@@ -475,3 +656,68 @@ def data_dump(conf, paths):
         np.savetxt(dump_handle, np.loadtxt(dump_path))
 
     dump_handle.close()
+
+
+def data_dump_depth(conf, paths):
+    "Dump all the relevant data to a single text file"
+
+    # ingredients:
+    #   -node coordinates
+    #   -patch IDp
+    #   -coherent PSC
+    #   -incoherent PSC
+
+    patch_ids = np.setdiff1d(
+        conf.exp.mod_patches,
+        conf.ana.exclude_patch_ids
+    )
+
+    vf_lookup = {"lh": "R", "rh": "L"}
+
+    os.chdir(paths.depth_ana.base.full())
+
+    for i_bin in xrange(len(conf.ana.bin_centres)):
+
+        bin_ext = "_bin_" + str(i_bin)
+
+        # open it this way so that we can write to it twice and it will append
+        dump_handle = open(paths.depth_ana.comb.full(bin_ext + ".txt"), "w")
+
+        for hemi in ["lh", "rh"]:
+
+            hemi_ext = "_" + hemi
+
+            psc_comb_path = paths.depth_ana.comb.full(bin_ext + hemi_ext + "-full.niml.dset")
+
+            # now we need to know the patch IDs
+            loc_id = conf.subj.subj_id + "_loc"
+            loc_conf = ns_patches.config.get_conf(loc_id)
+            loc_paths = ns_patches.paths.get_subj_paths(loc_conf)
+
+            id_path = loc_paths.loc.patch_id_thr.full(
+                "_{h:s}-full_Clustered_e1_a{n:.01f}.niml.dset".format(
+                    h=hemi,
+                    n=conf.loc.area_thr
+                )
+            )
+
+            dump_path = paths.depth_ana.comb.full(bin_ext + hemi_ext + ".txt")
+
+            if os.path.exists(dump_path):
+                os.remove(dump_path)
+
+            # now we have all our ingredients, we can write out the text file
+            dump_cmd = [
+                "3dmaskdump",
+                "-o", dump_path,
+                "-mask", psc_comb_path,
+                id_path,
+                psc_comb_path
+            ]
+
+            runcmd.run_cmd(" ".join(dump_cmd))
+
+            # concatenate across hemis
+            np.savetxt(dump_handle, np.loadtxt(dump_path))
+
+        dump_handle.close()

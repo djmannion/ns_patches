@@ -65,6 +65,7 @@ def get_subj_paths( conf ):
     else:
         paths.ana = _get_ana_paths( conf, paths )
         paths.coh_ana = _get_coh_ana_paths(conf, paths)
+        paths.depth_ana = _get_depth_ana_paths(conf, paths)
 
     paths.roi = _get_roi_paths( conf, paths )
 
@@ -153,6 +154,41 @@ def _get_coh_ana_paths( conf, paths ):
     file_base = "{subj_id:s}_{exp_id:s}-".format( subj_id = subj_id, exp_id = exp_id )
 
     ana.stim_times = ana.base + ( file_base + "stim_times" )
+
+    ana.glm = ana.base + ( file_base + "glm" )
+    ana.beta = ana.base + ( file_base + "beta" )
+    ana.resp = ana.base + ( file_base + "resp" )
+    ana.comb = ana.base + (file_base + "comb")
+    ana.glm_comb = ana.base + (file_base + "glm_comb")
+
+    ana.bltc = ana.base + ( file_base + "bltc" )
+    ana.bl = ana.base + ( file_base + "bl" )
+    ana.psc = ana.base + ( file_base + "psc" )
+
+    ana.vl = ana.base + ( file_base + "vis_loc_rois" )
+    ana.mask = ana.base + ( file_base + "mask" )
+
+    ana.patch_dist = ana.base + ( file_base + "patch_dist" )
+
+    ana.img_resp = ana.base + ( file_base + "img_resp" )
+
+    ana.vec_resp = ana.base + ( file_base + "vec_resp" )
+
+    ana.regress = ana.base + ( file_base + "regress_coef" )
+
+    return ana
+
+def _get_depth_ana_paths( conf, paths ):
+    """Get the paths for the depth analysis"""
+
+    ana = fmri_tools.paths.PathsHandler()
+
+    ana.base = paths.base / "depth_analysis"
+
+    subj_id = conf.subj.subj_id
+    exp_id = conf.exp.id
+
+    file_base = "{subj_id:s}_{exp_id:s}-".format( subj_id = subj_id, exp_id = exp_id )
 
     ana.glm = ana.base + ( file_base + "glm" )
     ana.beta = ana.base + ( file_base + "beta" )
