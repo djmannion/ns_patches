@@ -103,6 +103,9 @@ def _get_ana_conf(conf):
     # threshold all > blank at p < 0.05 (one-tailed)
     ana_conf.all_t_thresh = 1.65
 
+    ana_conf.bin_centres = np.arange(-0.25, 1.3, 0.25)
+    ana_conf.bin_width = 0.25
+
     return ana_conf
 
 
