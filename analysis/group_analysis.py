@@ -81,3 +81,41 @@ def coh_summ():
         group_paths.coh_summ.full(".npy"),
         patch_data
     )
+
+def depth_summ():
+
+    conf = ns_patches.config.get_conf()
+    group_paths = ns_patches.paths.get_group_paths()
+
+    all_conf = ns_patches.config.get_conf(
+        subj_id=None,
+        subj_types="exp",
+        excl_subj_ids=conf.ana.exclude_subj_ids
+    )
+
+    subj_ids = all_conf.all_subj.subj.keys()
+    subj_ids.sort()
+
+    n_subj = len(subj_ids)
+
+    depth_data = np.empty((n_subj, len(conf.ana.bin_centres), 2))
+    depth_data.fill(np.NAN)
+
+    for (i_subj, subj_id) in enumerate(subj_ids):
+
+        subj_conf = ns_patches.config.get_conf(subj_id)
+        subj_paths = ns_patches.paths.get_subj_paths(subj_conf)
+
+        for i_bin in xrange(len(conf.ana.bin_centres)):
+
+            # this is i, j, k, patch, coh, non-coh
+            subj_data = np.loadtxt(
+                subj_paths.depth_ana.comb.full("_bin_{n:d}.txt".format(n=i_bin))
+            )
+
+            # average over all nodes and patches
+            depth_data[i_subj, i_bin, :] = np.mean(subj_data[:, -2:], axis=0)
+
+    assert np.sum(np.isnan(depth_data)) == 0
+
+    np.save(group_paths.depth_summ.full(".npy"), depth_data)
