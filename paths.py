@@ -269,6 +269,7 @@ def get_group_paths():
     grp.patch_k = grp.base + ( file_base + "-patch_counts" )
 
     grp.coh_summ = grp.base + ( file_base + "-coh_summ" )
+    grp.depth_summ = grp.base + ( file_base + "-depth_summ" )
     grp.subj_data = grp.base + ( file_base + "-subj_data" )
 
     return grp

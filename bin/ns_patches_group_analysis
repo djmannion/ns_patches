@@ -23,7 +23,8 @@ def main():
                                     )
 
     proc_steps = ( "patch_k",
-                   "coh_summ"
+                   "coh_summ",
+                   "depth_summ"
                  )
 
     parser.add_argument( "proc_step",
@@ -43,6 +44,9 @@ def main():
 
     elif args.proc_step == "coh_summ":
         ns_patches.analysis.group_analysis.coh_summ()
+
+    elif args.proc_step == "depth_summ":
+        ns_patches.analysis.group_analysis.depth_summ()
 
     else:
         print "Not implemented"
