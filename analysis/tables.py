@@ -28,7 +28,7 @@ def patch_count_table(out_path):
 
     n_cols = patch_k.shape[1] + 4
 
-    out = "\\begin{tabular}[c]{*{" + str(n_cols) + "}{c}}\n"
+    out = "\\begin{tabu}[c]{*{" + str(n_cols) + "}{c}}\n"
 
     header = (
         " & " +
@@ -50,17 +50,35 @@ def patch_count_table(out_path):
 
     for i_patch in xrange(patch_k.shape[1]):
 
-        entries = (
-            [str(conf.exp.mod_patches[i_patch] + 1)] +
-            [str(int(patch_k[i_s, i_patch])) for i_s in xrange(patch_k.shape[0])] +
-            ["{n:.2f}".format(n=np.mean(patch_k[:, i_patch]))] +
-            [str(int(np.min(patch_k[:, i_patch])))] +
-            [str(int(np.min(patch_k[i_included_subj, i_patch])))]
-        )
+        if (conf.exp.mod_patches[i_patch]) in conf.ana.exclude_patch_ids:
+            text_colour = "red"
+        else:
+            text_colour = "black"
 
-        row = " & ".join(entries) + " \\\\ \n"
+        # patch number
+        entries = [str(conf.exp.mod_patches[i_patch] + 1)]
+
+        for i_subj in xrange(patch_k.shape[0]):
+
+            if i_subj == 5 or text_colour == "red":
+                subj_colour = "red"
+            else:
+                subj_colour = "black"
+
+            entries += [
+                "\\color{" + subj_colour + "} " +
+                str(int(patch_k[i_subj, i_patch]))
+            ]
+
+        entries += ["{n:.2f}".format(n=np.mean(patch_k[:, i_patch]))]
+        entries += [str(int(np.min(patch_k[:, i_patch])))]
+        entries += [str(int(np.min(patch_k[i_included_subj, i_patch])))]
+
+        row = "\\rowfont{\\color{" + text_colour + "}} " + " & ".join(entries) + " \\\\ \n"
 
         out += row
+
+#    out += "\\color{black} \n"
 
     out += "\\hline \n"
 
@@ -74,6 +92,7 @@ def patch_count_table(out_path):
 
     out += " & ".join(entries) + " \\\\ \n"
 
-    out += "\\end{tabular}"
+    out += "\\end{tabu}"
 
-    return out
+    with open(out_path, "w") as out_file:
+        out_file.writelines(out)
