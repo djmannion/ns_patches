@@ -19,6 +19,102 @@ import ns_patches.config, ns_patches.paths, ns_patches.analysis.group_analysis
 import ns_patches.analysis.analysis
 
 
+def plot_depth(save_path=None):
+
+    conf = ns_pathces.config.get_conf()
+    group_paths = ns_patches.paths.get_group_paths()
+
+    depth_data = np.load(group_paths.depth_summ.full(".npy"))
+
+    # coh - incoh
+    depth_diff = depth_data[..., 0] - depth_data[..., 1]
+
+    subj_mean = np.mean(depth_diff, axis=1)
+
+    diff_norm = (depth_diff - subj_mean[:, np.newaxis]) + np.mean(depth_diff)
+
+    diff_mean = np.mean(diff_norm, axis=0)
+    diff_sem = np.std(diff_norm, axis=0, ddof=1) / np.sqrt(diff_norm.shape[0])
+
+    x_off = 0.16
+    y_off = 0.175
+    x_max = 0.97
+    y_max = 0.97
+
+    ax_plt = plt.Axes(
+        fig=fig,
+        rect=[x_off, y_off, x_max - x_off, y_max - y_off]
+    )
+
+    fig.add_axes(ax_plt)
+
+    ax.plt(
+        conf.ana.bin_centres,
+        diff_mean
+    )
+    ax_plt.plot(
+        [-0.05, 1.05],
+        [0, 0],
+        "--",
+        color=[0.5] * 3
+    )
+
+    ax_plt.plot(
+        conf.ana.bin_centres,
+        diff_mean,
+        "k"
+    )
+
+    ax_plt.scatter(
+        conf.ana.bin_centres,
+        diff_mean,
+        facecolor=[0] * 3,
+        edgecolor=[1] * 3,
+        s=60,
+        zorder=100
+    )
+
+    for (i_bin, bin_centre) in enumerate(conf.ana.bin_centres):
+
+        ax_plt.plot(
+            [bin_centre] * 2,
+            [
+                diff_mean[i_bin] - diff_sem[i_bin],
+                diff_mean[i_bin] + diff_sem[i_bin]
+            ],
+            "k"
+        )
+
+    ax_plt.spines["bottom"].set_visible(True)
+
+    ax_plt.tick_params(axis="x", top="off", right="off")
+    ax_plt.tick_params(axis="y", right="off")
+
+    ax_plt.spines["right"].set_visible(False)
+    ax_plt.spines["top"].set_visible(False)
+
+    ax_plt.set_xlabel("Distance from aperture centre (mm)")
+#    ax_plt.set_xticks(range(11))
+
+    xtick_labels = [
+        "{n1:.0f}-{n2:.0f}".format(n1=n1, n2=n1 + bin_spacing)
+        for n1 in np.arange(11)
+    ]
+    xtick_labels[-1] = "10+"
+
+#    ax_plt.set_xticklabels(xtick_labels)
+
+    ax_plt.set_ylabel("Coherent - non-coherent response (psc)")#, y=0.4)
+
+    ax_plt.spines["bottom"].set_position(("outward", 5))
+    ax_plt.spines["left"].set_position(("outward", 5))
+
+    if save_path:
+        plt.savefig(save_path)
+
+    plt.close(fig)
+
+
 def plot_dist_diff(save_path=None):
 
     bin_start = 0.0
