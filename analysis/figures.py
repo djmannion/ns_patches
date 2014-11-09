@@ -21,7 +21,130 @@ import ns_patches.analysis.analysis
 
 def plot_depth(save_path=None):
 
-    conf = ns_pathces.config.get_conf()
+    conf = ns_patches.config.get_conf()
+    group_paths = ns_patches.paths.get_group_paths()
+
+    # this is subjects x depth x (coh, incoh)
+    depth_data = np.load(group_paths.depth_summ.full(".npy"))
+
+    subj_mean = np.mean(np.mean(depth_data, axis=-1), axis=-1)
+
+    data_norm = (
+        (depth_data - subj_mean[:, np.newaxis, np.newaxis]) +
+        np.mean(depth_data)
+    )
+
+    data_mean = np.mean(data_norm, axis=0)
+    data_sem = np.std(data_norm, axis=0, ddof=1) / np.sqrt(data_norm.shape[0])
+
+    fig = plt.figure(figsize=[3.3, 2.5], frameon=False)
+
+    x_off = 0.15
+    y_off = 0.175
+    x_max = 0.97
+    y_max = 0.97
+    y_lower_max = y_off + 0.15
+
+    ax_base = plt.Axes(
+        fig=fig,
+        rect=[x_off, y_off, x_max - x_off, y_lower_max - y_off],
+    )
+
+    ax_plt = plt.Axes(
+        fig=fig,
+        rect=[x_off, y_lower_max, x_max - x_off, y_max - y_lower_max],
+        sharex=ax_base,
+    )
+
+    fig.add_axes(ax_base)
+    fig.add_axes(ax_plt)
+
+    ax_plt.set_ylim([0.9, 2.1])
+    ax_base.set_ylim([0,0.1])
+
+    symbols = ["s", "D"]
+    labels = ["Coherent", "Non-coherent"]
+
+    for (i_cond, flag) in enumerate([-1, +1]):
+
+        ax_plt.plot(
+            conf.ana.bin_centres + flag * 0.01,
+            data_mean[:, i_cond],
+            "k"
+        )
+
+        ax_plt.scatter(
+            conf.ana.bin_centres + flag * 0.01,
+            data_mean[:, i_cond],
+            facecolor=[0] * 3,
+            edgecolor=[1] * 3,
+            s=60,
+            zorder=100,
+            marker=symbols[i_cond],
+            label=labels[i_cond]
+        )
+
+        for (i_bin, bin_centre) in enumerate(conf.ana.bin_centres):
+
+            ax_plt.plot(
+                [bin_centre + flag * 0.01] * 2,
+                [
+                    data_mean[i_bin, i_cond] - data_sem[i_bin, i_cond],
+                    data_mean[i_bin, i_cond] + data_sem[i_bin, i_cond]
+                ],
+                "k"
+            )
+
+    ax_plt.spines["bottom"].set_visible(False)
+    ax_base.spines["top"].set_visible(False)
+
+    ax_plt.tick_params(labeltop="off", labelbottom="off")
+    ax_plt.tick_params(axis="x", bottom="off", top="off", right="off")
+    ax_plt.tick_params(axis="y", right="off")
+    ax_base.tick_params(axis="y", right="off")
+
+    ax_base.spines["right"].set_visible(False)
+    ax_plt.spines["right"].set_visible(False)
+    ax_plt.spines["top"].set_visible(False)
+
+    ax_base.xaxis.tick_bottom()
+
+    ax_base.set_xlabel("Cortical depth~(relative distance)")
+
+    ax_base.set_xlim([-0.1, 1.1])
+
+    ax_plt.set_ylabel("Response (normalised psc)", y=0.4)
+
+    ax_base.spines["bottom"].set_position(("outward", 5))
+    ax_base.spines["left"].set_position(("outward", 5))
+    ax_plt.spines["left"].set_position(("outward", 5))
+
+    ax_base.set_yticks([0])
+    ax_base.tick_params(axis="y", length=0)
+
+    kwargs = dict(transform=ax_base.transAxes, color='k', clip_on=False)
+
+    ax_base.plot([-0.04, -0.01], [0.35, 0.45], "k", **kwargs)
+    ax_base.plot([-0.04, -0.01], [0.45, 0.55], "k", **kwargs)
+
+    leg = plt.legend(
+        scatterpoints=1,
+        loc="upper left"
+    )
+
+    leg.draw_frame(False)
+
+    if save_path:
+        plt.savefig(save_path)
+
+    plt.close(fig)
+
+    return leg
+
+
+def plot_depth_diff(save_path=None):
+
+    conf = ns_patches.config.get_conf()
     group_paths = ns_patches.paths.get_group_paths()
 
     depth_data = np.load(group_paths.depth_summ.full(".npy"))
@@ -32,6 +155,7 @@ def plot_depth(save_path=None):
     subj_mean = np.mean(depth_diff, axis=1)
 
     diff_norm = (depth_diff - subj_mean[:, np.newaxis]) + np.mean(depth_diff)
+    diff_norm = depth_diff
 
     diff_mean = np.mean(diff_norm, axis=0)
     diff_sem = np.std(diff_norm, axis=0, ddof=1) / np.sqrt(diff_norm.shape[0])
@@ -41,6 +165,8 @@ def plot_depth(save_path=None):
     x_max = 0.97
     y_max = 0.97
 
+    fig = plt.figure(figsize=[3.3, 2.5], frameon=False)
+
     ax_plt = plt.Axes(
         fig=fig,
         rect=[x_off, y_off, x_max - x_off, y_max - y_off]
@@ -48,7 +174,7 @@ def plot_depth(save_path=None):
 
     fig.add_axes(ax_plt)
 
-    ax.plt(
+    ax_plt.plot(
         conf.ana.bin_centres,
         diff_mean
     )
@@ -85,6 +211,8 @@ def plot_depth(save_path=None):
             "k"
         )
 
+    ax_plt.set_xlim([-0.1, 1.1])
+
     ax_plt.spines["bottom"].set_visible(True)
 
     ax_plt.tick_params(axis="x", top="off", right="off")
@@ -93,18 +221,8 @@ def plot_depth(save_path=None):
     ax_plt.spines["right"].set_visible(False)
     ax_plt.spines["top"].set_visible(False)
 
-    ax_plt.set_xlabel("Distance from aperture centre (mm)")
-#    ax_plt.set_xticks(range(11))
-
-    xtick_labels = [
-        "{n1:.0f}-{n2:.0f}".format(n1=n1, n2=n1 + bin_spacing)
-        for n1 in np.arange(11)
-    ]
-    xtick_labels[-1] = "10+"
-
-#    ax_plt.set_xticklabels(xtick_labels)
-
-    ax_plt.set_ylabel("Coherent - non-coherent response (psc)")#, y=0.4)
+    ax_plt.set_xlabel("Cortical depth (relative distance)")
+    ax_plt.set_ylabel("Coherent - non-coherent response (psc)")
 
     ax_plt.spines["bottom"].set_position(("outward", 5))
     ax_plt.spines["left"].set_position(("outward", 5))
@@ -730,7 +848,13 @@ def plot_cond_resp(save_path=None):
     plt.close(fig)
 
 
-def plot_aperture_images(run_log_path, i_aperture=16, save_path=None):
+def plot_aperture_images(run_log_path=None, i_aperture=16, save_path=None):
+
+    if run_log_path is None:
+        run_log_path = os.path.join(
+            "/home/damien/venv_study/ns_patches_analysis/data/",
+            "s1021_ns_patches-run_01_log.npz"
+        )
 
     conf = ns_patches.config.get_conf()
 
@@ -770,15 +894,18 @@ def plot_aperture_images(run_log_path, i_aperture=16, save_path=None):
 
         run_mat[i_trial, trial_img] = trial_type
 
-    fig = plt.figure(figsize=[3.3, 4], frameon=False)
+    fig = plt.figure(
+        figsize=[3.3, 4],
+        frameon=False
+    )
 
     x_off = 0.13
     y_off = 0.15
 
     ax = plt.Axes(
-            fig=fig,
-            rect=[x_off, y_off, 0.97 - x_off, 0.97 - y_off],
-            frameon=False
+        fig=fig,
+        rect=[x_off, y_off, 0.97 - x_off, 0.97 - y_off],
+        frameon=False
     )
 
     fig.add_axes(ax)
@@ -798,20 +925,20 @@ def plot_aperture_images(run_log_path, i_aperture=16, save_path=None):
     ax.set_xticklabels([])
 
     ax.tick_params(
-            axis="both",
-            direction="out",
-            right="off",
-            bottom="off",
-            top="off"
+        axis="both",
+        direction="out",
+        right="off",
+        bottom="off",
+        top="off"
     )
 
     ax.tick_params(
-            axis="both",
-            which="minor",
-            left="off",
-            right="off",
-            top="off",
-            bottom="off"
+        axis="both",
+        which="minor",
+        left="off",
+        right="off",
+        top="off",
+        bottom="off"
     )
 
     ax.grid(
@@ -824,15 +951,17 @@ def plot_aperture_images(run_log_path, i_aperture=16, save_path=None):
     ax.set_ylabel("Run trial")
 
     patches = [
-            mpatches.Patch(
-                        facecolor=patch_colour,
-                        edgecolor="black",
-                        label=patch_label
-                    )
-            for (patch_colour, patch_label) in zip(
-                        ("white", "black"),
-                        ("Coherent", "Non-coherent")
-                    )
+        mpatches.Patch(
+            facecolor=patch_colour,
+            edgecolor="black",
+            label=patch_label,
+            rasterized=False,
+            aa=False
+        )
+        for (patch_colour, patch_label) in zip(
+            ("white", "black"),
+            ("Coherent", "Non-coherent")
+        )
     ]
 
     legend = plt.legend(
@@ -844,6 +973,14 @@ def plot_aperture_images(run_log_path, i_aperture=16, save_path=None):
     legend.draw_frame(False)
 
     if save_path:
-        plt.savefig(save_path)
+
+        plt.savefig(save_path + ".svg")
+
+        figutils.figutils.svg_to_pdf(
+            svg_path=save_path + ".svg",
+            pdf_path=save_path + ".pdf"
+        )
 
     plt.close(fig)
+
+

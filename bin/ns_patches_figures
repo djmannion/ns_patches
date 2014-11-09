@@ -1,0 +1,66 @@
+#! /usr/bin/env python2
+
+"""Create a figure for the ns_patches fMRI experiment"""
+
+import argparse
+import logging
+import sys
+
+import ns_patches.analysis.figures
+
+
+def main():
+    """Execution function"""
+
+    desc = "Creates a figure for the ns_patches fMRI experiment"
+
+    # use this formatter so we can supply our own indentation
+    fmt = argparse.RawDescriptionHelpFormatter
+
+    parser = argparse.ArgumentParser(
+        description=desc,
+        formatter_class=fmt
+    )
+
+    figs = (
+        "timing",
+        "resp",
+        "ecc",
+        "dist",
+        "depth"
+    )
+
+    parser.add_argument(
+        "fig",
+        choices=figs,
+        help="Figure type"
+    )
+
+    parser.add_argument(
+        "save_path",
+        help="Save path"
+    )
+
+    args = parser.parse_args()
+
+    if args.fig == "timing":
+        ns_patches.analysis.figures.plot_aperture_images(save_path=args.save_path)
+
+    elif args.fig == "resp":
+        ns_patches.analysis.figures.plot_cond_resp(save_path=args.save_path)
+
+    elif args.fig == "ecc":
+        ns_patches.analysis.figures.plot_cond_resp_by_ecc(save_path=args.save_path)
+
+    elif args.fig == "dist":
+        ns_patches.analysis.figures.plot_dist(save_path=args.save_path)
+
+    elif args.fig == "depth":
+        ns_patches.analysis.figures.plot_depth(save_path=args.save_path)
+
+    else:
+        print "Not implemented"
+
+
+if __name__ == "__main__":
+    main()
