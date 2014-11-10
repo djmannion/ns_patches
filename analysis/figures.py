@@ -1,5 +1,6 @@
 
-import os, os.path
+import os
+import functools
 
 import figutils
 import matplotlib
@@ -11,6 +12,7 @@ import matplotlib.patches as mpatches
 import matplotlib.gridspec as gridspec
 import numpy as np
 import scipy.stats
+import svgutils.transform as sg
 
 import fmri_tools.utils
 import figutils
@@ -233,6 +235,57 @@ def plot_depth_diff(save_path=None):
     plt.close(fig)
 
 
+
+
+def plot_dist(save_path=None):
+
+    plot_dist_abs(save_path + "_abs.svg")
+    plot_dist_diff(save_path + "_diff.svg")
+
+    fig = sg.SVGFigure("8.38cm", "17.5cm")
+
+    abs_fig = sg.fromfile(save_path + "_abs.svg")
+    abs_plot = abs_fig.getroot()
+
+    diff_fig = sg.fromfile(save_path + "_diff.svg")
+    diff_plot = diff_fig.getroot()
+
+    map_fig = sg.fromfile(
+        os.path.join(
+            "/home/damien/science/papers/current/ns_patches/figures",
+            "dist/dist_map.svg"
+        )
+    )
+    map_plot = map_fig.getroot()
+
+    map_plot.moveto(41, 14, scale=1)
+    abs_plot.moveto(0, 160.0, scale=1.25)
+    diff_plot.moveto(0, 395.08, scale=1.25)
+
+    text = functools.partial(
+        sg.TextElement,
+        size=12,
+        weight="bold",
+        font="freesans"
+    )
+
+    A = text(11.6, 13, "A")
+    B = text(11.6, 162, "B")
+    C = text(11.6, 390, "C")
+
+    fig.append([abs_plot, diff_plot, map_plot])
+    fig.append(A)
+    fig.append(B)
+    fig.append(C)
+
+    fig.save(save_path + ".svg")
+
+    figutils.figutils.svg_to_pdf(
+        svg_path=save_path + ".svg",
+        pdf_path=save_path + ".pdf"
+    )
+
+
 def plot_dist_diff(save_path=None):
 
     bin_start = 0.0
@@ -374,7 +427,8 @@ def plot_dist_diff(save_path=None):
     plt.close(fig)
 
 
-def plot_dist(save_path=None):
+
+def plot_dist_abs(save_path=None):
 
     bin_start = 0.0
     bin_spacing = 1.0
@@ -550,8 +604,6 @@ def plot_dist(save_path=None):
 
     plt.close(fig)
 
-    return leg
-
 
 def plot_cond_resp_by_ecc(save_path=None):
 
@@ -712,7 +764,12 @@ def plot_cond_resp_by_ecc(save_path=None):
     leg.draw_frame(False)
 
     if save_path:
-        plt.savefig(save_path)
+        plt.savefig(save_path + ".svg")
+
+        figutils.figutils.svg_to_pdf(
+            svg_path=save_path + ".svg",
+            pdf_path=save_path + ".pdf"
+        )
 
     plt.close(fig)
 
@@ -761,7 +818,6 @@ def plot_cond_resp(save_path=None):
     )
 
     # now can get on with the business of plotting!
-
     fig = plt.figure(figsize=[3.3, 2.5], frameon=False)
 
     x_off = 0.15
@@ -789,15 +845,13 @@ def plot_cond_resp(save_path=None):
 
     ax_base.set_xlim([-0.5, 1.5])
 
-    ax_plt.plot(
-        [0] * 2,
-        [cond_mean[0] - cond_sem[0], cond_mean[0] + cond_sem[0]],
-        "k"
-    )
-
-    ax_plt.plot(
-        [1] * 2,
-        [cond_mean[1] - cond_sem[1], cond_mean[1] + cond_sem[1]],
+    for i_cond in xrange(2):
+        ax_plt.plot(
+            [i_cond] * 2,
+            [
+                cond_mean[i_cond] - cond_sem[i_cond],
+                cond_mean[i_cond] + cond_sem[i_cond]
+            ],
         "k"
     )
 
@@ -843,7 +897,12 @@ def plot_cond_resp(save_path=None):
     ax_base.plot([-0.04, -0.01], [0.45, 0.55], "k", **kwargs)
 
     if save_path:
-        plt.savefig(save_path)
+        plt.savefig(save_path + ".svg")
+
+        figutils.figutils.svg_to_pdf(
+            svg_path=save_path + ".svg",
+            pdf_path=save_path + ".pdf"
+        )
 
     plt.close(fig)
 
@@ -982,5 +1041,3 @@ def plot_aperture_images(run_log_path=None, i_aperture=16, save_path=None):
         )
 
     plt.close(fig)
-
-
