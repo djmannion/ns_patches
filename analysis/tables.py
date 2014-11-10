@@ -35,7 +35,7 @@ def patch_count_table(out_path):
         "\\multicolumn{" + str(patch_k.shape[0]) + "}{c}{Participant}" +
         " \\\\\n"
     )
-    
+
     header += "\\cline{2-" + str(patch_k.shape[0] + 1) + "} \n"
 
     header += " & ".join(
@@ -77,8 +77,6 @@ def patch_count_table(out_path):
         row = "\\rowfont{\\color{" + text_colour + "}} " + " & ".join(entries) + " \\\\ \n"
 
         out += row
-
-#    out += "\\color{black} \n"
 
     out += "\\hline \n"
 
