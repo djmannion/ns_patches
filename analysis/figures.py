@@ -752,9 +752,17 @@ def plot_cond_resp_by_ecc(save_path=None):
         ["coh", "ring"]
     )
 
-    os.chdir(cwd)
-
     print s
+
+    s2 = fmri_tools.stats.anova(
+        ecc_data[:, 0, :] - ecc_data[:, 1, :],
+        "/home/damien/tmp",
+        ["ring"]
+    )
+
+    print s2
+
+    os.chdir(cwd)
 
     # do the stats
     for i_ring in xrange(3):
