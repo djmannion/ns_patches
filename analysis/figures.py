@@ -9,19 +9,58 @@ figutils.set_defaults()
 import matplotlib.pyplot as plt
 plt.ioff()
 import matplotlib.patches as mpatches
-import matplotlib.gridspec as gridspec
 import numpy as np
 import scipy.stats
 import svgutils.transform as sg
 
 import fmri_tools.utils
-import figutils
+import fmri_tools.stats
 
-import ns_patches.config, ns_patches.paths, ns_patches.analysis.group_analysis
+import ns_patches.config
+import ns_patches.paths
+import ns_patches.analysis.group_analysis
 import ns_patches.analysis.analysis
 
 
 def plot_depth(save_path=None):
+
+    plot_depth_abs(save_path + "_abs.svg")
+    plot_depth_diff(save_path + "_diff.svg")
+
+    fig = sg.SVGFigure("8.38cm", "13.2cm")
+
+    abs_fig = sg.fromfile(save_path + "_abs.svg")
+    abs_plot = abs_fig.getroot()
+
+    diff_fig = sg.fromfile(save_path + "_diff.svg")
+    diff_plot = diff_fig.getroot()
+
+    abs_plot.moveto(3.319, 11, scale=1.25)
+    diff_plot.moveto(0, 247, scale=1.25)
+
+    text = functools.partial(
+        sg.TextElement,
+        size=12,
+        weight="bold",
+        font="freesans"
+    )
+
+    A = text(11.6, 24, "A")
+    B = text(11.6, 241, "B")
+
+    fig.append([abs_plot, diff_plot])
+    fig.append(A)
+    fig.append(B)
+
+    fig.save(save_path + ".svg")
+
+    figutils.figutils.svg_to_pdf(
+        svg_path=save_path + ".svg",
+        pdf_path=save_path + ".pdf"
+    )
+
+
+def plot_depth_abs(save_path=None):
 
     conf = ns_patches.config.get_conf()
     group_paths = ns_patches.paths.get_group_paths()
@@ -62,7 +101,7 @@ def plot_depth(save_path=None):
     fig.add_axes(ax_plt)
 
     ax_plt.set_ylim([0.9, 2.1])
-    ax_base.set_ylim([0,0.1])
+    ax_base.set_ylim([0, 0.1])
 
     symbols = ["s", "D"]
     labels = ["Coherent", "Non-coherent"]
@@ -111,7 +150,7 @@ def plot_depth(save_path=None):
 
     ax_base.xaxis.tick_bottom()
 
-    ax_base.set_xlabel("Cortical depth~(relative distance)")
+    ax_base.set_xlabel("Cortical depth (relative distance)")
 
     ax_base.set_xlim([-0.1, 1.1])
 
@@ -153,6 +192,40 @@ def plot_depth_diff(save_path=None):
 
     # coh - incoh
     depth_diff = depth_data[..., 0] - depth_data[..., 1]
+
+    cwd = os.getcwd()
+
+    stats = fmri_tools.stats.anova(depth_diff, "/home/damien/tmp", ["depth"])
+
+    os.chdir(cwd)
+
+    print stats
+
+    # do stats on the difference
+    for (i_bin, bin_centre) in enumerate(conf.ana.bin_centres):
+
+        (t, p) = scipy.stats.ttest_1samp(depth_diff[:, i_bin], 0)
+
+        print (
+            "Bin centre at " + str(bin_centre) +
+            ", " + str(t) + "; " + str(p)
+        )
+
+    trend_coeffs = [
+        ("linear",  [-2, -1, +0, +1, +2]),
+        ("quad",    [+2, -1, -2, -1, +2]),
+        ("cubic",   [-1, +2, +0, -2, +1]),
+        ("quartic", [+1, -4, +6, -4, +1])
+    ]
+
+    for (trend_name, trend_coeff) in trend_coeffs:
+
+        (t, p) = scipy.stats.ttest_1samp(
+            np.sum(depth_diff * trend_coeff, axis=1),
+            0.0
+        )
+
+        print trend_name + " trend: " + str(t) + "; " + str(p)
 
     subj_mean = np.mean(depth_diff, axis=1)
 
@@ -235,8 +308,6 @@ def plot_depth_diff(save_path=None):
     plt.close(fig)
 
 
-
-
 def plot_dist(save_path=None):
 
     plot_dist_abs(save_path + "_abs.svg")
@@ -289,8 +360,10 @@ def plot_dist(save_path=None):
 def plot_dist_diff(save_path=None):
 
     bin_start = 0.0
-    bin_spacing = 1.0
-    n_bins = 10
+    bin_spacing = 2.0
+    n_bins = 5
+
+    bins = np.arange(0, n_bins + 1) * bin_spacing
 
     conf = ns_patches.config.get_conf()
     group_paths = ns_patches.paths.get_group_paths()
@@ -346,6 +419,28 @@ def plot_dist_diff(save_path=None):
     diff_mean = np.mean(diff_data, axis=0)
     diff_sem = np.std(diff_data, axis=0, ddof=1) / np.sqrt(diff_data.shape[0])
 
+    cwd = os.getcwd()
+
+    stats = fmri_tools.stats.anova(diff_data, "/home/damien/tmp", ["depth"])
+
+    os.chdir(cwd)
+
+    print stats
+
+    trend_coeffs = [
+        ("linear",  [-5, -3, -1, +1, +3, +5]),
+        ("quad",    [+5, -1, -4, -4, -1, +5])
+    ]
+
+    for (trend_name, trend_coeff) in trend_coeffs:
+
+        (t, p) = scipy.stats.ttest_1samp(
+            np.sum(diff_data * trend_coeff, axis=1),
+            0.0
+        )
+
+        print trend_name + " trend: " + str(t) + "; " + str(p)
+
     fig = plt.figure(figsize=[3.3, 2.5], frameon=False)
 
     x_off = 0.16
@@ -361,7 +456,7 @@ def plot_dist_diff(save_path=None):
     fig.add_axes(ax_plt)
 
     ax_plt.set_ylim([-0.05, 0.2])
-    ax_plt.set_xlim([-0.5, 11.5])
+    ax_plt.set_xlim([-0.5, n_bins + 0.5])
 
     ax_plt.plot(
         [-0.5, 11.5],
@@ -371,13 +466,13 @@ def plot_dist_diff(save_path=None):
     )
 
     ax_plt.plot(
-        np.arange(11),
+        np.arange(n_bins + 1),
         diff_mean,
         "k"
     )
 
     ax_plt.scatter(
-        np.arange(11),
+        np.arange(n_bins + 1),
         diff_mean,
         facecolor=[0] * 3,
         edgecolor=[1] * 3,
@@ -385,7 +480,7 @@ def plot_dist_diff(save_path=None):
         zorder=100
     )
 
-    for i_bin in xrange(11):
+    for i_bin in xrange(n_bins + 1):
 
         ax_plt.plot(
             [i_bin] * 2,
@@ -406,17 +501,17 @@ def plot_dist_diff(save_path=None):
     ax_plt.spines["top"].set_visible(False)
 
     ax_plt.set_xlabel("Distance from aperture centre (mm)")
-    ax_plt.set_xticks(range(11))
+    ax_plt.set_xticks(range(n_bins + 1))
 
     xtick_labels = [
-        "{n1:.0f}-{n2:.0f}".format(n1=n1, n2=n1 + bin_spacing)
-        for n1 in np.arange(11)
+        "{n1:.0f}-{n2:.0f}".format(n1=bins[n1], n2=bins[n1] + bin_spacing)
+        for n1 in np.arange(n_bins + 1)
     ]
     xtick_labels[-1] = "10+"
 
     ax_plt.set_xticklabels(xtick_labels)
 
-    ax_plt.set_ylabel("Coherent - non-coherent response (psc)")#, y=0.4)
+    ax_plt.set_ylabel("Coherent - non-coherent response (psc)")
 
     ax_plt.spines["bottom"].set_position(("outward", 5))
     ax_plt.spines["left"].set_position(("outward", 5))
@@ -427,12 +522,13 @@ def plot_dist_diff(save_path=None):
     plt.close(fig)
 
 
-
 def plot_dist_abs(save_path=None):
 
     bin_start = 0.0
-    bin_spacing = 1.0
-    n_bins = 10
+    bin_spacing = 2.0
+    n_bins = 5
+
+    bins = np.arange(0, n_bins + 1) * bin_spacing
 
     conf = ns_patches.config.get_conf()
     group_paths = ns_patches.paths.get_group_paths()
@@ -515,9 +611,9 @@ def plot_dist_abs(save_path=None):
     fig.add_axes(ax_plt)
 
     ax_plt.set_ylim([0.7, 2.1])
-    ax_base.set_ylim([0,0.1])
+    ax_base.set_ylim([0, 0.1])
 
-    ax_base.set_xlim([-0.5, 11.5])
+    ax_base.set_xlim([-0.5, n_bins + 0.5])
 
     symbols = ["s", "D"]
     labels = ["Coherent", "Non-coherent"]
@@ -525,13 +621,13 @@ def plot_dist_abs(save_path=None):
     for (i_cond, flag) in enumerate([-1, +1]):
 
         ax_plt.plot(
-            np.arange(11) + flag * 0.1,
+            np.arange(n_bins + 1) + flag * 0.1,
             np.mean(data[:, i_cond, :], axis=0),
             "k"
         )
 
         ax_plt.scatter(
-            np.arange(11) + flag * 0.1,
+            np.arange(n_bins + 1) + flag * 0.1,
             np.mean(data[:, i_cond, :], axis=0),
             facecolor=[0] * 3,
             edgecolor=[1] * 3,
@@ -541,7 +637,7 @@ def plot_dist_abs(save_path=None):
             label=labels[i_cond]
         )
 
-        for i_bin in xrange(11):
+        for i_bin in xrange(n_bins + 1):
 
             ax_plt.plot(
                 [i_bin + flag * 0.1] * 2,
@@ -567,14 +663,14 @@ def plot_dist_abs(save_path=None):
     ax_base.xaxis.tick_bottom()
 
     ax_base.set_xlabel("Distance from aperture centre (mm)")
-    ax_base.set_xticks(range(11))
+    ax_base.set_xticks(range(n_bins + 1))
     ax_base.set_xticklabels(["Inner", "Middle", "Outer"])
 
     xtick_labels = [
-        "{n1:.0f}-{n2:.0f}".format(n1=n1, n2=n1 + bin_spacing)
-        for n1 in np.arange(11)
+        "{n1:.0f}-{n2:.0f}".format(n1=bins[n1], n2=bins[n1] + bin_spacing)
+        for n1 in np.arange(n_bins + 1)
     ]
-    xtick_labels[-1] = "> 10"
+    xtick_labels[-1] = "10+"
 
     ax_base.set_xticklabels(xtick_labels)
 
@@ -648,6 +744,18 @@ def plot_cond_resp_by_ecc(save_path=None):
     mean_data = np.mean(norm_data, axis=0)
     sem_data = np.std(norm_data, axis=0, ddof=1) / np.sqrt(data.shape[0])
 
+    cwd = os.getcwd()
+
+    s = fmri_tools.stats.anova(
+        ecc_data,
+        "/home/damien/tmp",
+        ["coh", "ring"]
+    )
+
+    os.chdir(cwd)
+
+    print s
+
     # do the stats
     for i_ring in xrange(3):
 
@@ -688,7 +796,7 @@ def plot_cond_resp_by_ecc(save_path=None):
     fig.add_axes(ax_plt)
 
     ax_plt.set_ylim([1.0, 2.05])
-    ax_base.set_ylim([0,0.1])
+    ax_base.set_ylim([0, 0.1])
 
     ax_base.set_xlim([-0.5, 2.5])
 
@@ -722,7 +830,6 @@ def plot_cond_resp_by_ecc(save_path=None):
     for i_x in [1, 2]:
         ax_plt.plot([i_x - 0.1, i_x + 0.1], [1.975] * 2, "k")
         ax_plt.text(i_x, 1.98, "*", horizontalalignment="center")
-
 
     ax_plt.spines["bottom"].set_visible(False)
     ax_base.spines["top"].set_visible(False)
@@ -776,7 +883,6 @@ def plot_cond_resp_by_ecc(save_path=None):
 
 def plot_cond_resp(save_path=None):
 
-    conf = ns_patches.config.get_conf()
     group_paths = ns_patches.paths.get_group_paths()
 
     # this is (subj x aperture x condition [coh, non-coh])
@@ -841,7 +947,7 @@ def plot_cond_resp(save_path=None):
     fig.add_axes(ax_plt)
 
     ax_plt.set_ylim([1.45, 1.65])
-    ax_base.set_ylim([0,0.1])
+    ax_base.set_ylim([0, 0.1])
 
     ax_base.set_xlim([-0.5, 1.5])
 
@@ -852,8 +958,8 @@ def plot_cond_resp(save_path=None):
                 cond_mean[i_cond] - cond_sem[i_cond],
                 cond_mean[i_cond] + cond_sem[i_cond]
             ],
-        "k"
-    )
+            "k"
+        )
 
     ax_plt.scatter(
         [0, 1],
