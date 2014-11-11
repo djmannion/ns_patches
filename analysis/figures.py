@@ -163,6 +163,17 @@ def plot_depth_abs(save_path=None):
     ax_base.set_yticks([0])
     ax_base.tick_params(axis="y", length=0)
 
+    ax_plt.set_xticks(conf.ana.bin_centres)
+
+    xtick_labels = [
+        "{n1:.1f} - {n2:.1f}".format(
+            n1=bin_centre - conf.ana.bin_width / 2.0,
+            n2=bin_centre + conf.ana.bin_width / 2.0
+        )
+        for bin_centre in conf.ana.bin_centres
+    ]
+    ax_plt.set_xticklabels(xtick_labels)
+
     kwargs = dict(transform=ax_base.transAxes, color='k', clip_on=False)
 
     ax_base.plot([-0.04, -0.01], [0.35, 0.45], "k", **kwargs)
@@ -301,6 +312,17 @@ def plot_depth_diff(save_path=None):
 
     ax_plt.spines["bottom"].set_position(("outward", 5))
     ax_plt.spines["left"].set_position(("outward", 5))
+
+    ax_plt.set_xticks(conf.ana.bin_centres)
+
+    xtick_labels = [
+        "{n1:.1f} - {n2:.1f}".format(
+            n1=bin_centre - conf.ana.bin_width / 2.0,
+            n2=bin_centre + conf.ana.bin_width / 2.0
+        )
+        for bin_centre in conf.ana.bin_centres
+    ]
+    ax_plt.set_xticklabels(xtick_labels)
 
     if save_path:
         plt.savefig(save_path)
@@ -504,7 +526,7 @@ def plot_dist_diff(save_path=None):
     ax_plt.set_xticks(range(n_bins + 1))
 
     xtick_labels = [
-        "{n1:.0f}-{n2:.0f}".format(n1=bins[n1], n2=bins[n1] + bin_spacing)
+        "{n1:.0f} - {n2:.0f}".format(n1=bins[n1], n2=bins[n1] + bin_spacing)
         for n1 in np.arange(n_bins + 1)
     ]
     xtick_labels[-1] = "10+"
@@ -667,7 +689,7 @@ def plot_dist_abs(save_path=None):
     ax_base.set_xticklabels(["Inner", "Middle", "Outer"])
 
     xtick_labels = [
-        "{n1:.0f}-{n2:.0f}".format(n1=bins[n1], n2=bins[n1] + bin_spacing)
+        "{n1:.0f} - {n2:.0f}".format(n1=bins[n1], n2=bins[n1] + bin_spacing)
         for n1 in np.arange(n_bins + 1)
     ]
     xtick_labels[-1] = "10+"
