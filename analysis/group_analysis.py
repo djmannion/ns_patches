@@ -63,8 +63,6 @@ def coh_summ():
         # nodes x (i, j, k, patch_id, patch_dist, all_t, coh, incoh)
         subj_data = np.loadtxt(subj_paths.coh_ana.comb.full(".txt"))
 
-        i_act = subj_data[:, 5] > conf.ana.all_t_thresh
-
         for (i_patch, patch_id) in enumerate(patch_ids):
 
             # add 1 because they're stored as one-based
@@ -81,6 +79,7 @@ def coh_summ():
         group_paths.coh_summ.full(".npy"),
         patch_data
     )
+
 
 def depth_summ():
 

@@ -100,9 +100,6 @@ def _get_ana_conf(conf):
         ana_conf.exclude_patch_ids
     )
 
-    # threshold all > blank at p < 0.05 (one-tailed)
-    ana_conf.all_t_thresh = 1.65
-
     ana_conf.bin_width = 0.2
     ana_conf.bin_centres = np.arange(0.1, 1.0, ana_conf.bin_width)
 

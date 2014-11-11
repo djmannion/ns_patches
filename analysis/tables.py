@@ -39,7 +39,7 @@ def patch_count_table(out_path):
     header += "\\cline{2-" + str(patch_k.shape[0] + 1) + "} \n"
 
     header += " & ".join(
-        ["Patch"] +
+        ["Aperture"] +
         [str(x) for x in np.arange(1, patch_k.shape[0] + 1)] +
         ["Mean", "Min", "Min~(8/9)"]
     )
