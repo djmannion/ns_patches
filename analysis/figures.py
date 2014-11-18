@@ -109,13 +109,13 @@ def plot_depth_abs(save_path=None):
     for (i_cond, flag) in enumerate([-1, +1]):
 
         ax_plt.plot(
-            conf.ana.bin_centres + flag * 0.01,
+            conf.ana.bin_centres + flag * 0.0,
             data_mean[:, i_cond],
             "k"
         )
 
         ax_plt.scatter(
-            conf.ana.bin_centres + flag * 0.01,
+            conf.ana.bin_centres + flag * 0.0,
             data_mean[:, i_cond],
             facecolor=[0] * 3,
             edgecolor=[1] * 3,
@@ -128,7 +128,7 @@ def plot_depth_abs(save_path=None):
         for (i_bin, bin_centre) in enumerate(conf.ana.bin_centres):
 
             ax_plt.plot(
-                [bin_centre + flag * 0.01] * 2,
+                [bin_centre + flag * 0.0] * 2,
                 [
                     data_mean[i_bin, i_cond] - data_sem[i_bin, i_cond],
                     data_mean[i_bin, i_cond] + data_sem[i_bin, i_cond]
@@ -643,13 +643,13 @@ def plot_dist_abs(save_path=None):
     for (i_cond, flag) in enumerate([-1, +1]):
 
         ax_plt.plot(
-            np.arange(n_bins + 1) + flag * 0.1,
+            np.arange(n_bins + 1) + flag * 0.0,
             np.mean(data[:, i_cond, :], axis=0),
             "k"
         )
 
         ax_plt.scatter(
-            np.arange(n_bins + 1) + flag * 0.1,
+            np.arange(n_bins + 1) + flag * 0.0,
             np.mean(data[:, i_cond, :], axis=0),
             facecolor=[0] * 3,
             edgecolor=[1] * 3,
@@ -662,7 +662,7 @@ def plot_dist_abs(save_path=None):
         for i_bin in xrange(n_bins + 1):
 
             ax_plt.plot(
-                [i_bin + flag * 0.1] * 2,
+                [i_bin + flag * 0.0] * 2,
                 [
                     data_mean[i_cond, i_bin] - data_sem[i_cond, i_bin],
                     data_mean[i_cond, i_bin] + data_sem[i_cond, i_bin]
