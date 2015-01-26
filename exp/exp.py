@@ -8,6 +8,54 @@ import psychopy.visual, psychopy.misc, psychopy.event, psychopy.core
 import ns_patches.config, ns_patches.paths, ns_patches.prepare.prepare_images
 import ns_patches.exp.loc
 
+
+def screenshots(mon_name="UMN_7T_colour"):
+
+    conf = ns_patches.config.get_conf()
+    paths = ns_patches.paths.get_exp_paths( conf )
+
+    # images x trials
+    img_trials = np.tile(np.arange(conf.exp.n_img), (32, 1))
+
+    win = psychopy.visual.Window(
+        (1024, 768),
+        monitor=mon_name,
+        fullscr=False,
+        allowGUI=True
+    )
+
+    fix_stim = ns_patches.stimulus.get_fixation( win, conf )
+
+    img_db = load_img_info( conf, paths )
+    img = load_images( conf, paths, img_db )
+    masks = gen_masks( conf )
+    stim = gen_stim( conf, win, masks )
+
+    # prep for first trial
+    stim = update_stim( conf, stim, img, masks, img_trials[ :, 0 ] )
+
+    for i_trial in xrange(conf.exp.n_img):
+
+        map( lambda x : x.draw(), fix_stim )
+        stim.draw()
+        win.flip()
+
+        img_id = img_db[i_trial]["id"].astype("int")
+
+        win.getMovieFrame()
+        win.saveMovieFrames(
+            os.path.join(
+                "/home/damien/venv_study/ns_patches",
+                "caps/ns_patches_ap_img_{n:d}.png".format(n=img_id)
+            )
+        )
+
+        if i_trial < (conf.exp.n_img - 1):
+            stim = update_stim( conf, stim, img, masks, img_trials[ :, i_trial + 1 ] )
+
+    win.close()
+
+
 def run( subj_id, run_num, show_perf = True, mon_name = "UMN_7T_colour" ):
 
     # no matter what, can't show performance if its the first run
